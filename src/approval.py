@@ -178,6 +178,48 @@ def get_all_reports(limit: int = 50) -> list[dict]:
         conn.close()
 
 
+def get_reports_by_status(status: str, limit: int = 50) -> list[dict]:
+    """Return reports filtered by approval status ('DRAFT', 'APPROVED', 'REJECTED')."""
+    conn = _get_connection()
+    try:
+        cur = conn.execute("""
+            SELECT report_id, district, station, ward_input, period,
+                   generated_at, approval_status, approved_by, approved_at,
+                   rejection_reason
+            FROM reports
+            WHERE approval_status = ?
+            ORDER BY generated_at DESC
+            LIMIT ?
+        """, (status, limit))
+        return [dict(row) for row in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def get_approval_stats() -> dict:
+    """Return counts for DRAFT, APPROVED, REJECTED, and TOTAL reports."""
+    conn = _get_connection()
+    try:
+        cur = conn.execute("""
+            SELECT
+                SUM(CASE WHEN approval_status = 'DRAFT' THEN 1 ELSE 0 END) as drafts,
+                SUM(CASE WHEN approval_status = 'APPROVED' THEN 1 ELSE 0 END) as approved,
+                SUM(CASE WHEN approval_status = 'REJECTED' THEN 1 ELSE 0 END) as rejected,
+                COUNT(*) as total
+            FROM reports
+        """)
+        row = cur.fetchone()
+        return {
+            "drafts": row["drafts"] or 0,
+            "approved": row["approved"] or 0,
+            "rejected": row["rejected"] or 0,
+            "total": row["total"] or 0,
+        }
+    finally:
+        conn.close()
+
+
+
 def load_report_json(report_id: str) -> dict | None:
     """Load the full report JSON for a given report ID."""
     conn = _get_connection()

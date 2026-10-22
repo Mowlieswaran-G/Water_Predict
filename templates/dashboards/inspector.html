@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Municipal Inspector Dashboard — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Role Hero -->
+  <div class="role-hero inspector-theme">
+    <div class="role-hero-content">
+      <div class="role-pill">🏛️ Municipal Surveillance</div>
+      <h1>Municipal Quality Inspector Dashboard</h1>
+      <p class="role-subtitle">
+        Welcome, <strong>{{ current_user.full_name }}</strong> ({{ current_user.department }}).
+        Monitor ward-level water monitoring wells, audit station provenance, and enforce municipal reporting truth.
+      </p>
+    </div>
+    <div class="role-hero-badge">
+      <span class="officer-shield">🔍</span>
+      <span class="officer-id">INSPECTOR #{{ current_user.username | upper }}</span>
+    </div>
+  </div>
+
+  <!-- Metric Row -->
+  <div class="metric-row">
+    <div class="metric-card metric-blue">
+      <span class="metric-value">38</span>
+      <span class="metric-label">Monitored TN Districts</span>
+    </div>
+    <div class="metric-card metric-amber">
+      <span class="metric-value">100%</span>
+      <span class="metric-label">Honest Unverified Ward Mapping</span>
+    </div>
+    <div class="metric-card metric-green">
+      <span class="metric-value">CGWB</span>
+      <span class="metric-label">Official Ground Source</span>
+    </div>
+    <div class="metric-card metric-grey">
+      <span class="metric-value">&gt;365d</span>
+      <span class="metric-label">Historical Age Threshold</span>
+    </div>
+  </div>
+
+  <!-- Critical Inspector Guidance Alert -->
+  <div class="alert alert-warning" style="margin-bottom:1.75rem;">
+    <svg viewBox="0 0 24 24" width="20"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+      <strong>Municipal Inspector Protocol:</strong>
+      All groundwater monitoring stations in the CGWB dataset lack verified GIS municipal ward boundary links. Whenever a citizen or municipal worker queries a ward number, this system strictly marks the link as <strong>Unverified</strong> and never claims certified drinking water safety.
+    </div>
+  </div>
+
+  <!-- Ward Inspection Search Launcher -->
+  <div class="card" style="margin-bottom:1.75rem;">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h2>Launch Ward &amp; Station Field Inspection</h2>
+    </div>
+    <div class="card-body" style="padding:1.5rem;">
+      <p style="color:var(--grey-600);margin-bottom:1.25rem;">
+        Search district stations, input municipal ward numbers, and inspect raw parameters, collection years, and source provenance.
+      </p>
+      <a href="{{ url_for('search_explorer') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:0.5rem;">
+        <span>🔍 Search Municipal Stations</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Municipal Verification Standards Checklist -->
+  <div class="card">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="20"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <h2>Inspector Verification Checklist (Standard Operating Procedures)</h2>
+    </div>
+    <div class="card-body" style="padding:1.5rem;">
+      <div class="sop-grid">
+        <div class="sop-item">
+          <div class="sop-num">1</div>
+          <div class="sop-text">
+            <strong>Check Collection Date</strong>
+            <p>If sample was collected over 365 days ago, verify that the report displays the mandatory "Historical" warning label.</p>
+          </div>
+        </div>
+        <div class="sop-item">
+          <div class="sop-num">2</div>
+          <div class="sop-text">
+            <strong>Confirm Unit Integrity</strong>
+            <p>Verify that concentrations are properly scaled (1 mg/L = 1,000 µg/L) and non-concentration units (like pH) are never converted.</p>
+          </div>
+        </div>
+        <div class="sop-item">
+          <div class="sop-num">3</div>
+          <div class="sop-text">
+            <strong>Verify Ward Boundary Reality</strong>
+            <p>Confirm that ward links are explicitly labeled as "Unverified" to protect citizens from false municipal tap water assumptions.</p>
+          </div>
+        </div>
+        <div class="sop-item">
+          <div class="sop-num">4</div>
+          <div class="sop-text">
+            <strong>Ensure Human Sign-off</strong>
+            <p>No report can be published without explicit sign-off by a designated municipal officer.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

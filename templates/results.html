@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Search Results — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1>📋 Search Results</h1>
+  <p class="page-subtitle">Actual measurements from the groundwater dataset — with full source transparency.</p>
+</div>
+
+{% if not meta %}
+  <div class="alert alert-info">
+    No search has been run yet.
+    <a href="{{ url_for('home') }}" class="alert-link">Go to Search →</a>
+  </div>
+{% else %}
+
+<!-- ── Summary cards ──────────────────────────────────── -->
+<div class="metric-row">
+  <div class="metric-card metric-blue">
+    <span class="metric-value">{{ meta.total_found }}</span>
+    <span class="metric-label">Records Found</span>
+  </div>
+  <div class="metric-card metric-blue">
+    <span class="metric-value">{{ meta.period_found }}</span>
+    <span class="metric-label">In Period</span>
+  </div>
+  <div class="metric-card metric-blue">
+    <span class="metric-value metric-sm">{{ meta.latest_date or "Unknown" }}</span>
+    <span class="metric-label">Latest Sample Date</span>
+  </div>
+  {% set wstatus = meta.ward_match.status %}
+  <div class="metric-card {% if wstatus == 'Unverified' %}metric-amber{% elif wstatus == 'Verified' %}metric-green{% else %}metric-grey{% endif %}">
+    <span class="metric-value metric-sm">{{ wstatus }}</span>
+    <span class="metric-label">Ward Match</span>
+  </div>
+</div>
+
+<!-- ── District / Station / Period info ──────────────── -->
+<div class="info-strip">
+  <span><strong>District:</strong> {{ meta.district }}</span>
+  <span class="strip-sep">·</span>
+  <span><strong>Station:</strong> {{ meta.station }}</span>
+  {% if meta.ward_input %}
+  <span class="strip-sep">·</span>
+  <span><strong>Ward:</strong> {{ meta.ward_input }}</span>
+  {% endif %}
+  <span class="strip-sep">·</span>
+  <span><strong>Period:</strong> {{ meta.period }}</span>
+</div>
+
+<!-- ── Warnings ──────────────────────────────────────── -->
+{% if meta.warnings %}
+  <div class="warnings-section">
+    {% for w in meta.warnings %}
+      <div class="alert alert-warning">{{ w | safe }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<!-- ── Ward match ─────────────────────────────────────── -->
+{% if meta.ward_match.status == 'Unverified' %}
+  <div class="alert alert-danger">
+    <strong>⚠️ Ward match is UNVERIFIED.</strong><br>
+    {{ meta.ward_match.message }}
+  </div>
+{% endif %}
+
+<!-- ── No data ────────────────────────────────────────── -->
+{% if row_count == 0 %}
+  <div class="no-data-box">
+    <div class="no-data-icon">🔍</div>
+    <h3>No data found for this selection.</h3>
+    <p class="no-data-msg">
+      No data found for this ward in the available dataset.<br>
+      <strong>This does not mean the water is safe or unsafe.</strong>
+    </p>
+    <a href="{{ url_for('home') }}" class="btn btn-outline">← New Search</a>
+  </div>
+
+{% else %}
+
+  <!-- ── Period-empty notice ──────────────────────────── -->
+  {% if meta.period_empty %}
+    <div class="alert alert-warning">
+      ⏱️ <strong>No samples found within the selected period.</strong>
+      Showing all available records. Broaden the date range to see more results.
+    </div>
+  {% endif %}
+
+  <!-- ── Results table ────────────────────────────────── -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="18"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      <h2>Measurement Records <span class="badge">{{ row_count }}</span></h2>
+      <a href="{{ url_for('download_results') }}" class="btn btn-sm btn-green" style="margin-left:auto;">
+        ⬇️ Download CSV
+      </a>
+    </div>
+
+    <div class="table-scroll">
+      <table class="data-table" id="resultsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            {% for col in columns %}
+              <th>{{ col }}</th>
+            {% endfor %}
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i, row in records | enumerate %}
+            <tr class="{% if row.get('Age_Label', '') is defined and 'Historical' in (row.get('Age_Label', '') | string) %}row-historical{% endif %}">
+              <td class="row-num">{{ loop.index }}</td>
+              {% for col in columns %}
+                <td>
+                  {% set val = row.get(col, '') %}
+                  {% if col == 'Age_Label' %}
+                    {% if 'Historical' in (val | string) %}
+                      <span class="badge badge-amber">🕰️ Historical</span>
+                    {% else %}
+                      <span class="badge badge-green">✅ Recent</span>
+                    {% endif %}
+                  {% elif col == 'Ward_Match_Status' %}
+                    {% if val == 'Unverified' %}
+                      <span class="badge badge-red">⚠️ Unverified</span>
+                    {% elif val == 'Verified' %}
+                      <span class="badge badge-green">✅ Verified</span>
+                    {% else %}
+                      <span class="badge badge-grey">{{ val }}</span>
+                    {% endif %}
+                  {% else %}
+                    {{ val if val is not none and val != '' else '—' }}
+                  {% endif %}
+                </td>
+              {% endfor %}
+              <td>
+                <a href="{{ url_for('detail', row_idx=loop.index0) }}"
+                   class="btn btn-xs btn-outline">View</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Parameter summary ────────────────────────────── -->
+  {% if summary %}
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <h2>Parameter Summary</h2>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Parameter</th><th>Count</th><th>Min</th><th>Max</th><th>Mean</th><th>Missing</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in summary %}
+            <tr>
+              <td><strong>{{ row.Parameter }}</strong></td>
+              <td>{{ row.Count }}</td>
+              <td>{{ row.Min }}</td>
+              <td>{{ row.Max }}</td>
+              <td>{{ row.Mean }}</td>
+              <td>
+                {% if row.Missing > 0 %}
+                  <span class="badge badge-amber">{{ row.Missing }} missing</span>
+                {% else %}
+                  <span class="badge badge-green">None</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Source evidence ──────────────────────────────── -->
+  <div class="card card-source" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="18"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      <h2>Source Evidence</h2>
+    </div>
+    <div class="source-grid">
+      <div class="source-item">
+        <span class="source-key">Dataset</span>
+        <span class="source-val">Tamil Nadu Groundwater Quality (Cleaned CSV)</span>
+      </div>
+      <div class="source-item">
+        <span class="source-key">Official Source</span>
+        <span class="source-val">Central Ground Water Board (CGWB) — India</span>
+      </div>
+      <div class="source-item">
+        <span class="source-key">Data Type</span>
+        <span class="source-val">Groundwater chemistry from monitoring wells. <strong>NOT</strong> verified treated drinking-water tap results.</span>
+      </div>
+      <div class="source-item">
+        <span class="source-key">Ward Mapping</span>
+        <span class="source-val">No verified ward-to-station mapping exists. Ward associations are unverified proximity only.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Actions ─────────────────────────────────────── -->
+  <div class="action-bar">
+    <a href="{{ url_for('home') }}" class="btn btn-outline">← New Search</a>
+    <form action="{{ url_for('generate_report') }}" method="POST" style="display:inline;">
+      <button type="submit" class="btn btn-primary">
+        📄 Generate Draft Report →
+      </button>
+    </form>
+    <a href="{{ url_for('download_results') }}" class="btn btn-green">⬇️ Download CSV</a>
+  </div>
+
+{% endif %}
+{% endif %}
+
+{% endblock %}

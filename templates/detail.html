@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Sample Detail #{{ row_idx + 1 }} — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1>🔍 Detailed Sample View</h1>
+  <p class="page-subtitle">Record {{ row_idx + 1 }} of {{ total_rows }} — Full provenance and quality notes.</p>
+</div>
+
+<!-- ── Navigation ────────────────────────────────────── -->
+<div class="detail-nav">
+  {% if row_idx > 0 %}
+    <a href="{{ url_for('detail', row_idx=row_idx - 1) }}" class="btn btn-sm btn-outline">← Previous</a>
+  {% else %}
+    <span class="btn btn-sm btn-outline disabled">← Previous</span>
+  {% endif %}
+
+  <span class="detail-counter">Record {{ row_idx + 1 }} / {{ total_rows }}</span>
+
+  {% if row_idx < total_rows - 1 %}
+    <a href="{{ url_for('detail', row_idx=row_idx + 1) }}" class="btn btn-sm btn-outline">Next →</a>
+  {% else %}
+    <span class="btn btn-sm btn-outline disabled">Next →</span>
+  {% endif %}
+</div>
+
+<div class="detail-grid">
+
+  <!-- ── Location card ─────────────────────────────── -->
+  <div class="card detail-card">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="18"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <h2>Location</h2>
+    </div>
+    <div class="detail-fields">
+      <div class="detail-field">
+        <span class="detail-key">District</span>
+        <span class="detail-val">{{ district }}</span>
+      </div>
+      <div class="detail-field">
+        <span class="detail-key">Station</span>
+        <span class="detail-val">{{ station }}</span>
+      </div>
+      <div class="detail-field">
+        <span class="detail-key">Latitude</span>
+        <span class="detail-val">{{ lat }}</span>
+      </div>
+      <div class="detail-field">
+        <span class="detail-key">Longitude</span>
+        <span class="detail-val">{{ lon }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Date card ──────────────────────────────────── -->
+  <div class="card detail-card">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="18"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <h2>Sample Date</h2>
+    </div>
+    <div class="detail-fields">
+      <div class="detail-field">
+        <span class="detail-key">Collection Date</span>
+        <span class="detail-val">{{ raw_date }}</span>
+      </div>
+      <div class="detail-field">
+        <span class="detail-key">Age Status</span>
+        <span class="detail-val">
+          {% if is_historical == True or is_historical == 'True' %}
+            <span class="badge badge-amber">🕰️ {{ age_label }}</span>
+            <br><small style="color:#b45309;">This is a historical record — NOT a current measurement.</small>
+          {% elif is_historical == False or is_historical == 'False' %}
+            <span class="badge badge-green">✅ {{ age_label }}</span>
+          {% else %}
+            <span class="badge badge-grey">📅 Date unknown — age cannot be determined</span>
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Ward match card ──────────────────────────────── -->
+  <div class="card detail-card">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="18"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <h2>Ward Match Status</h2>
+    </div>
+    <div class="detail-fields">
+      <div class="detail-field">
+        <span class="detail-key">Status</span>
+        <span class="detail-val">
+          {% if ward_match.status == 'Unverified' %}
+            <span class="badge badge-red">⚠️ Unverified</span>
+          {% elif ward_match.status == 'Not requested' %}
+            <span class="badge badge-grey">No ward specified</span>
+          {% else %}
+            <span class="badge badge-green">{{ ward_match.status }}</span>
+          {% endif %}
+        </span>
+      </div>
+      {% if ward_match.message %}
+      <div class="detail-field">
+        <span class="detail-key">Explanation</span>
+        <span class="detail-val small-text">{{ ward_match.message }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div><!-- /detail-grid -->
+
+<!-- ── Measurements ──────────────────────────────────── -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-header">
+    <svg viewBox="0 0 24 24" width="18"><path d="M10 2v8L4.72 17.95A2 2 0 006.54 21h10.92a2 2 0 001.82-3.05L14 10V2"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>
+    <h2>Measurements</h2>
+  </div>
+  {% if meas_rows %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr><th>Parameter</th><th>Measured Value</th><th>Unit</th><th>Data Status</th></tr>
+      </thead>
+      <tbody>
+        {% for m in meas_rows %}
+          <tr>
+            <td><strong>{{ m.parameter }}</strong></td>
+            <td>{{ m.value }}</td>
+            <td><span class="unit-tag">(see dataset)</span></td>
+            <td>
+              {% if m.status == 'ok' %}
+                <span class="badge badge-green">✅ OK</span>
+              {% else %}
+                <span class="badge badge-grey">— Missing</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="empty-msg">No numeric measurements available for this record.</p>
+  {% endif %}
+</div>
+
+<!-- ── Source evidence ───────────────────────────────── -->
+<div class="card card-source" style="margin-bottom:1.5rem;">
+  <div class="card-header">
+    <svg viewBox="0 0 24 24" width="18"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+    <h2>Source Evidence</h2>
+  </div>
+  {% if source_warnings %}
+    {% for sw in source_warnings %}
+      <div class="alert alert-warning" style="margin:0 1.5rem 1rem;">{{ sw }}</div>
+    {% endfor %}
+  {% endif %}
+  <div class="source-grid">
+    {% for key, val in evidence.items() %}
+      <div class="source-item">
+        <span class="source-key">{{ key | replace('_', ' ') | title }}</span>
+        <span class="source-val">{{ val }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Raw row ───────────────────────────────────────── -->
+<details class="raw-details">
+  <summary>📂 View original raw row from dataset</summary>
+  <div class="table-scroll" style="margin-top:1rem;">
+    <table class="data-table">
+      <thead><tr><th>Column</th><th>Value</th></tr></thead>
+      <tbody>
+        {% for k, v in row.items() %}
+          <tr><td><code>{{ k }}</code></td><td>{{ v }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<!-- ── Navigation bottom ─────────────────────────────── -->
+<div class="action-bar" style="margin-top:1.5rem;">
+  <a href="{{ url_for('results') }}" class="btn btn-outline">← Back to Results</a>
+  {% if row_idx > 0 %}
+    <a href="{{ url_for('detail', row_idx=row_idx - 1) }}" class="btn btn-outline">← Previous Record</a>
+  {% endif %}
+  {% if row_idx < total_rows - 1 %}
+    <a href="{{ url_for('detail', row_idx=row_idx + 1) }}" class="btn btn-primary">Next Record →</a>
+  {% endif %}
+</div>
+
+{% endblock %}

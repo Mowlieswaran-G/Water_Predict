@@ -1,0 +1,6 @@
+"""
+app.py  –  Ward Water Quality Reporter  (Flask edition)
+Add custom Jinja2 filter: enumerate
+"""
+# This file patch is applied in app.py — already included there.
+# Keeping this note for clarity.

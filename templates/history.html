@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Report History — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1>📜 Report History</h1>
+  <p class="page-subtitle">All generated draft and approved reports stored locally.</p>
+</div>
+
+{% if not reports %}
+  <div class="no-data-box">
+    <div class="no-data-icon">📋</div>
+    <h3>No reports generated yet.</h3>
+    <p>Run a search and click <strong>Generate Draft Report</strong> to create your first report.</p>
+    <a href="{{ url_for('home') }}" class="btn btn-outline">← Start a Search</a>
+  </div>
+{% else %}
+
+<div class="card">
+  <div class="card-header">
+    <svg viewBox="0 0 24 24" width="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <h2>All Reports <span class="badge">{{ reports | length }}</span></h2>
+  </div>
+  <div class="table-scroll">
+    <table class="data-table" id="historyTable">
+      <thead>
+        <tr>
+          <th>Report ID</th>
+          <th>District</th>
+          <th>Station</th>
+          <th>Ward</th>
+          <th>Period</th>
+          <th>Generated</th>
+          <th>Status</th>
+          <th>Approved By</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+          <tr>
+            <td><code>{{ r.report_id }}</code></td>
+            <td>{{ r.district or '—' }}</td>
+            <td>{{ r.station or '—' }}</td>
+            <td>{{ r.ward_input or '—' }}</td>
+            <td>{{ r.period or '—' }}</td>
+            <td>{{ r.generated_at[:19] if r.generated_at else '—' }}</td>
+            <td>
+              {% if r.approval_status == 'APPROVED' %}
+                <span class="badge badge-green">✅ APPROVED</span>
+              {% elif r.approval_status == 'REJECTED' %}
+                <span class="badge badge-red">❌ REJECTED</span>
+              {% else %}
+                <span class="badge badge-amber">📝 DRAFT</span>
+              {% endif %}
+            </td>
+            <td>{{ r.approved_by or '—' }}</td>
+            <td>
+              <a href="{{ url_for('load_report', report_id=r.report_id) }}"
+                 class="btn btn-xs btn-outline">Load</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

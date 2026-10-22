@@ -1,0 +1,16 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ward_water_quality_reporter
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - SECRET_KEY=wwqr-prod-secret-replace-in-production
+      - FLASK_DEBUG=false
+    volumes:
+      - ./data:/app/data
+      - ./outputs:/app/outputs

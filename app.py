@@ -1,31 +1,26 @@
 """
-app.py  –  Ward Water Quality Reporter
-=======================================
-Main Streamlit application entry point.
+app.py  –  Ward Water Quality Reporter  (Flask edition)
+========================================================
+Run locally:
+    python app.py
 
-Run with:
-    streamlit run app.py
-
-Pages:
-    🏠 Home & Search
-    📋 Search Results
-    🔍 Detailed Sample View
-    📄 Report & Approval
-    📜 Report History
+Run via Docker:
+    docker compose up --build
 """
 
 from __future__ import annotations
 import io
+import json
 import logging
 import os
 import sys
 
 import pandas as pd
-import streamlit as st
+from flask import (
+    Flask, render_template, request, redirect, url_for,
+    session, flash, jsonify, send_file, g
+)
 
-# ---------------------------------------------------------------------------
-# Path fix (so src/ imports work from any CWD)
-# ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 
 from src import (
@@ -38,6 +33,7 @@ from src import (
     analysis,
     report_generator,
     approval,
+    auth,
 )
 
 # ---------------------------------------------------------------------------
@@ -50,790 +46,606 @@ logging.basicConfig(
 logger = logging.getLogger("app")
 
 # ---------------------------------------------------------------------------
-# Page config
+# Flask setup
 # ---------------------------------------------------------------------------
-st.set_page_config(
-    page_title="Ward Water Quality Reporter",
-    page_icon="💧",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "wwqr-dev-secret-change-in-prod")
 
-# ---------------------------------------------------------------------------
-# Custom CSS  (water-themed)
-# ---------------------------------------------------------------------------
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
-}
-
-/* ── Sidebar ───────────────────────────────────────── */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0a1628 0%, #0d2347 60%, #0a3d62 100%);
-    color: #e0eeff;
-}
-section[data-testid="stSidebar"] * {
-    color: #cce0ff !important;
-}
-section[data-testid="stSidebar"] .stRadio label {
-    font-size: 0.95rem;
-    padding: 6px 0;
-}
-
-/* ── Main background ───────────────────────────────── */
-.main .block-container {
-    background: #f0f4fa;
-    padding-top: 1.5rem;
-}
-
-/* ── Title block ───────────────────────────────────── */
-.title-block {
-    background: linear-gradient(135deg, #0a1628 0%, #1a3a6b 50%, #0d5c99 100%);
-    border-radius: 14px;
-    padding: 2rem 2.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 6px 24px rgba(10,22,40,0.35);
-}
-.title-block h1 {
-    color: #ffffff;
-    font-size: 2.2rem;
-    font-weight: 700;
-    margin: 0 0 0.3rem 0;
-    letter-spacing: -0.5px;
-}
-.title-block p {
-    color: #a8c8f0;
-    font-size: 1rem;
-    margin: 0;
-}
-
-/* ── Cards ──────────────────────────────────────────── */
-.card {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 1.25rem 1.5rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    margin-bottom: 1rem;
-}
-.card-blue {
-    border-left: 5px solid #1a6bbf;
-}
-.card-green {
-    border-left: 5px solid #1e8a4a;
-}
-.card-amber {
-    border-left: 5px solid #e8920a;
-}
-.card-red {
-    border-left: 5px solid #c0392b;
-}
-.card h3 {
-    color: #0a1628;
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 0.4rem 0;
-}
-.card p, .card div {
-    color: #3a4a5c;
-    font-size: 0.9rem;
-    margin: 0;
-}
-
-/* ── Metric tiles ───────────────────────────────────── */
-.metric-tile {
-    background: linear-gradient(135deg, #1a3a6b, #1a6bbf);
-    border-radius: 12px;
-    padding: 1.1rem 1.3rem;
-    color: white;
-    text-align: center;
-    box-shadow: 0 3px 12px rgba(26,107,191,0.3);
-}
-.metric-tile .value {
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-}
-.metric-tile .label {
-    font-size: 0.78rem;
-    opacity: 0.85;
-    margin-top: 0.35rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-/* ── Warning / info banners ─────────────────────────── */
-.warn-banner {
-    background: #fff8e1;
-    border: 1px solid #f9a825;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    color: #7a5000;
-    font-size: 0.88rem;
-    margin: 0.5rem 0;
-}
-.danger-banner {
-    background: #fdecea;
-    border: 1px solid #e53935;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    color: #7b1515;
-    font-size: 0.88rem;
-    margin: 0.5rem 0;
-}
-.info-banner {
-    background: #e3f2fd;
-    border: 1px solid #1a6bbf;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    color: #0a2a55;
-    font-size: 0.88rem;
-    margin: 0.5rem 0;
-}
-.approved-banner {
-    background: #e8f5e9;
-    border: 1px solid #2e7d32;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    color: #1b4320;
-    font-size: 0.88rem;
-    margin: 0.5rem 0;
-}
-
-/* ── Section headings ───────────────────────────────── */
-.section-heading {
-    color: #0a1628;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border-bottom: 2px solid #1a6bbf;
-    padding-bottom: 0.3rem;
-    margin: 1.2rem 0 0.8rem 0;
-}
-
-/* ── Buttons ────────────────────────────────────────── */
-.stButton > button {
-    background: linear-gradient(135deg, #1a6bbf, #0d5c99);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.55rem 1.6rem;
-    font-weight: 600;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 3px 10px rgba(26,107,191,0.3);
-}
-.stButton > button:hover {
-    background: linear-gradient(135deg, #2176c7, #1a6bbf);
-    box-shadow: 0 5px 16px rgba(26,107,191,0.45);
-    transform: translateY(-1px);
-}
-.stDownloadButton > button {
-    background: linear-gradient(135deg, #1e8a4a, #145c30);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.45rem 1.2rem;
-    font-weight: 600;
-    font-size: 0.88rem;
-}
-
-/* ── Approve / Reject buttons ───────────────────────── */
-div[data-testid="column"] .stButton > button.approve-btn {
-    background: linear-gradient(135deg, #1e8a4a, #145c30) !important;
-}
-div[data-testid="column"] .stButton > button.reject-btn {
-    background: linear-gradient(135deg, #c0392b, #922b21) !important;
-}
-
-/* ── Tables ─────────────────────────────────────────── */
-.dataframe {
-    font-size: 0.83rem !important;
-}
-
-/* ── Sidebar logo ───────────────────────────────────── */
-.sidebar-logo {
-    text-align: center;
-    font-size: 2.8rem;
-    margin-bottom: 0.5rem;
-}
-.sidebar-app-title {
-    text-align: center;
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: #a8d8ff !important;
-    margin-bottom: 1.5rem;
-}
-</style>
-""", unsafe_allow_html=True)
+# Custom Jinja2 filters
+app.jinja_env.filters["enumerate"] = enumerate
 
 
-# ===========================================================================
-# Session state helpers
-# ===========================================================================
-
-def _init_state():
-    defaults = {
-        "search_done":     False,
-        "search_result":   None,
-        "profile":         None,
-        "df_raw":          None,
-        "selected_row_idx": None,
-        "draft_report":    None,
-        "page":            "🏠 Home & Search",
+@app.context_processor
+def inject_user():
+    return {
+        "current_user": session.get("user"),
+        "demo_users": auth.DEFAULT_USERS,
+        "available_roles": auth.AVAILABLE_ROLES,
     }
-    for k, v in defaults.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
 
 
-# ===========================================================================
-# Data loading  (cached once per session)
-# ===========================================================================
-
-@st.cache_resource(show_spinner="Loading dataset …")
-def _load_data():
-    """Load CSV and build DatasetProfile once per process."""
-    df = data_loader.load_csv()
-    profile = analysis.DatasetProfile(df)
-    profile.parse_dates()
-    return df, profile
+# ---------------------------------------------------------------------------
+# Global cached data (loaded once at startup)
+# ---------------------------------------------------------------------------
+_CACHED_DF: pd.DataFrame | None = None
+_CACHED_PROFILE: analysis.DatasetProfile | None = None
+_LOAD_ERROR: str | None = None
 
 
-# ===========================================================================
-# Sidebar navigation
-# ===========================================================================
-
-def _sidebar():
-    with st.sidebar:
-        st.markdown('<div class="sidebar-logo">💧</div>', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="sidebar-app-title">Ward Water Quality Reporter</div>',
-            unsafe_allow_html=True,
+def _get_data() -> tuple[pd.DataFrame | None, analysis.DatasetProfile | None, str | None]:
+    global _CACHED_DF, _CACHED_PROFILE, _LOAD_ERROR
+    if _CACHED_DF is not None:
+        return _CACHED_DF, _CACHED_PROFILE, None
+    if _LOAD_ERROR is not None:
+        return None, None, _LOAD_ERROR
+    if not data_loader.file_exists():
+        _LOAD_ERROR = (
+            f"Dataset not found at: {data_loader.get_csv_path()}<br>"
+            "Please place <code>tamil_nadu_groundwater_quality_cleaned.csv</code> "
+            "inside the <code>data/</code> folder and restart the server."
         )
-        st.markdown("---")
-        page = st.radio(
-            "Navigate",
-            [
-                "🏠 Home & Search",
-                "📋 Search Results",
-                "🔍 Detailed Sample View",
-                "📄 Report & Approval",
-                "📜 Report History",
-            ],
-            index=[
-                "🏠 Home & Search",
-                "📋 Search Results",
-                "🔍 Detailed Sample View",
-                "📄 Report & Approval",
-                "📜 Report History",
-            ].index(st.session_state.page),
-            label_visibility="collapsed",
-        )
-        st.session_state.page = page
-        st.markdown("---")
-        st.markdown(
-            '<p style="font-size:0.75rem; color:#6a90c0; text-align:center;">'
-            "Data: Central Ground Water Board<br>"
-            "Tamil Nadu Groundwater Quality<br>"
-            "⚠️ Not a drinking-water certificate"
-            "</p>",
-            unsafe_allow_html=True,
-        )
-    return page
+        return None, None, _LOAD_ERROR
+    try:
+        _CACHED_DF = data_loader.load_csv()
+        _CACHED_PROFILE = analysis.DatasetProfile(_CACHED_DF)
+        _CACHED_PROFILE.parse_dates()
+        logger.info("Dataset loaded: %d rows", len(_CACHED_DF))
+    except Exception as exc:
+        _LOAD_ERROR = str(exc)
+        return None, None, _LOAD_ERROR
+    return _CACHED_DF, _CACHED_PROFILE, None
 
 
-# ===========================================================================
-# Page 1 — Home & Search
-# ===========================================================================
+# ---------------------------------------------------------------------------
+# Role-based dashboard helpers & routes
+# ---------------------------------------------------------------------------
 
-def page_home(df: pd.DataFrame, profile: analysis.DatasetProfile):
-    # ── Title ─────────────────────────────────────────────────────────────
-    st.markdown("""
-    <div class="title-block">
-      <h1>💧 Ward Water Quality Reporter</h1>
-      <p>Explore available groundwater records with transparent sources and sample dates.</p>
-    </div>
-    """, unsafe_allow_html=True)
+def get_role_dashboard_url(role: str) -> str:
+    """Return the designated dashboard endpoint URL based on user role."""
+    if role == "Environmental Officer":
+        return url_for("dashboard_officer")
+    elif role == "Municipal Quality Inspector":
+        return url_for("dashboard_inspector")
+    elif role == "Senior Hydrologist":
+        return url_for("dashboard_hydrologist")
+    else:
+        return url_for("dashboard_citizen")
 
-    # ── Dataset info banner ───────────────────────────────────────────────
-    st.markdown(
-        '<div class="info-banner">📂 <b>Dataset loaded:</b> '
-        f"{profile.total_rows:,} rows · {len(profile.param_cols)} measurable parameter(s) found.</div>",
-        unsafe_allow_html=True,
+
+@app.route("/")
+def home():
+    """
+    Entry point: If user is not logged in, display the login page first.
+    If user is authenticated, navigate directly to their respective role dashboard.
+    """
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login"))
+    return redirect(get_role_dashboard_url(user.get("role", "")))
+
+
+@app.route("/dashboard/officer")
+def dashboard_officer():
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login", next=request.path))
+
+    stats = approval.get_approval_stats()
+    pending = approval.get_reports_by_status("DRAFT", limit=20)
+    recent = approval.get_all_reports(limit=10)
+    return render_template(
+        "dashboards/officer.html",
+        stats=stats,
+        pending_reports=pending,
+        recent_decisions=recent,
     )
 
-    # ── Search form ───────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">🔎 Search Water-Quality Records</div>',
-                unsafe_allow_html=True)
 
-    with st.form("search_form"):
-        col1, col2 = st.columns(2)
+@app.route("/dashboard/inspector")
+def dashboard_inspector():
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login", next=request.path))
 
-        with col1:
-            # A — State (fixed)
-            st.text_input("State", value="Tamil Nadu", disabled=True)
-
-            # B — District
-            districts = (
-                data_loader.get_districts(df, profile.district_col)
-                if profile.district_col else []
-            )
-            if not districts:
-                st.warning("No district column found in dataset.")
-                district = st.text_input("District (enter manually)", "")
-            else:
-                district = st.selectbox(
-                    "District *",
-                    ["— select —"] + districts,
-                    help="Choose a district from the dataset.",
-                )
-
-            # C — Station
-            if profile.station_col and profile.district_col and district != "— select —":
-                stations = data_loader.get_stations_for_district(
-                    df, profile.district_col, profile.station_col, district
-                ) if district != "— select —" else []
-            else:
-                stations = []
-
-            if stations:
-                station = st.selectbox(
-                    "Sampling Station *",
-                    ["— select —"] + stations,
-                    help="Stations available in the selected district.",
-                )
-            else:
-                station = st.text_input(
-                    "Sampling Station *",
-                    "",
-                    help="Enter the station name (no stations loaded for this district yet).",
-                )
-
-        with col2:
-            # D — Ward
-            st.markdown(
-                '<p style="font-size:0.82rem; color:#c05a0a; font-weight:600;">'
-                "ℹ️  Ward information: The current groundwater dataset does not contain "
-                "verified ward-level assignments. Entering a ward will mark the result "
-                "as <b>Unverified</b>. No station will be silently claimed as a ward's sample."
-                "</p>",
-                unsafe_allow_html=True,
-            )
-            ward_input = st.text_input(
-                "Ward Name or Number (optional)",
-                "",
-                help="Enter a ward for reference — result will be flagged Unverified.",
-            )
-
-            # E — Date period
-            period = st.selectbox(
-                "Date Period *",
-                [
-                    "All available",
-                    "Last 30 days",
-                    "Last 6 months",
-                    "Last 1 year",
-                    "Custom",
-                ],
-            )
-            custom_start = custom_end = None
-            if period == "Custom":
-                c1, c2 = st.columns(2)
-                with c1:
-                    custom_start = st.date_input("From")
-                with c2:
-                    custom_end = st.date_input("To")
-
-            # F — Parameter
-            param_options = ["All parameters"] + profile.param_cols
-            selected_params_raw = st.multiselect(
-                "Water-Quality Parameter(s)",
-                param_options,
-                default=["All parameters"],
-                help="Select one or more parameters, or leave as 'All parameters'.",
-            )
-            if "All parameters" in selected_params_raw:
-                selected_params = profile.param_cols
-            else:
-                selected_params = selected_params_raw
-
-        # G — Submit
-        submitted = st.form_submit_button(
-            "🔍  Find Water-Quality Records",
-            use_container_width=True,
-        )
-
-    if submitted:
-        # Validate inputs
-        d = district if district != "— select —" else ""
-        s = station if station != "— select —" else ""
-        valid, err = validation.validate_search_inputs(d, s)
-        if not valid:
-            st.error(err)
-            return
-
-        with st.spinner("Searching …"):
-            result = analysis.run_search(
-                profile=profile,
-                district=d,
-                station=s,
-                ward_input=ward_input,
-                period=period,
-                selected_params=selected_params,
-                custom_start=custom_start,
-                custom_end=custom_end,
-            )
-
-        st.session_state.search_result = result
-        st.session_state.search_done = True
-        st.session_state.page = "📋 Search Results"
-        st.rerun()
+    stats = approval.get_approval_stats()
+    return render_template(
+        "dashboards/inspector.html",
+        stats=stats,
+    )
 
 
-# ===========================================================================
-# Page 2 — Search Results
-# ===========================================================================
+@app.route("/dashboard/hydrologist")
+def dashboard_hydrologist():
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login", next=request.path))
 
-def page_results(profile: analysis.DatasetProfile):
-    st.markdown("""
-    <div class="title-block">
-      <h1>📋 Search Results</h1>
-      <p>Actual measurements from the groundwater dataset — with full source transparency.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    stats = approval.get_approval_stats()
+    return render_template(
+        "dashboards/hydrologist.html",
+        stats=stats,
+    )
 
-    if not st.session_state.search_done or st.session_state.search_result is None:
-        st.info("No search has been run yet. Go to **🏠 Home & Search** to start.")
-        return
 
-    result = st.session_state.search_result
-    records: pd.DataFrame = result["records"]
-    warnings: list[str] = result["warnings"]
-    ward_match: dict = result["ward_match"]
-    param_cols: list[str] = result["param_cols_used"]
+@app.route("/dashboard/citizen")
+def dashboard_citizen():
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login", next=request.path))
 
-    # ── Summary cards ──────────────────────────────────────────────────────
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown(
-            f'<div class="metric-tile"><div class="value">{result["total_found"]}</div>'
-            '<div class="label">Records Found</div></div>',
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            f'<div class="metric-tile"><div class="value">{result["period_found"]}</div>'
-            '<div class="label">In Period</div></div>',
-            unsafe_allow_html=True,
-        )
-    with c3:
-        latest = result.get("latest_date") or "Unknown"
-        st.markdown(
-            f'<div class="metric-tile"><div class="value" style="font-size:1.1rem;">'
-            f'{latest}</div><div class="label">Latest Sample Date</div></div>',
-            unsafe_allow_html=True,
-        )
-    with c4:
-        wstatus = ward_match.get("status", "N/A")
-        color = "#e8920a" if wstatus == "Unverified" else (
-            "#1e8a4a" if wstatus == "Verified" else "#6a7f99")
-        st.markdown(
-            f'<div class="metric-tile" style="background: linear-gradient(135deg, {color}, {color}cc);">'
-            f'<div class="value" style="font-size:1rem;">{wstatus}</div>'
-            '<div class="label">Ward Match</div></div>',
-            unsafe_allow_html=True,
-        )
+    approved = approval.get_reports_by_status("APPROVED", limit=10)
+    return render_template(
+        "dashboards/citizen.html",
+        approved_reports=approved,
+    )
 
-    st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── Warnings ───────────────────────────────────────────────────────────
-    if warnings:
-        for w in warnings:
-            st.markdown(f'<div class="warn-banner">{w}</div>', unsafe_allow_html=True)
+@app.route("/search-explorer")
+def search_explorer():
+    """Universal groundwater search interface for all authenticated users."""
+    user = session.get("user")
+    if not user:
+        return redirect(url_for("login", next=request.path))
 
-    # ── Ward match explanation ──────────────────────────────────────────────
-    if ward_match.get("status") == "Unverified":
-        st.markdown(
-            f'<div class="danger-banner">⚠️ <b>Ward match is UNVERIFIED.</b> '
-            f'{ward_match.get("message", "")}</div>',
-            unsafe_allow_html=True,
-        )
+    df, profile, error = _get_data()
+    if error:
+        return render_template("error.html", error=error), 503
 
-    # ── No data case ────────────────────────────────────────────────────────
-    if records.empty:
-        st.markdown(
-            '<div class="danger-banner">🔴 <b>No data found for this selection.</b><br>'
-            "No data found for this ward in the available dataset. "
-            "This does not mean the water is safe or unsafe.</div>",
-            unsafe_allow_html=True,
-        )
-        return
+    districts = (
+        data_loader.get_districts(df, profile.district_col)
+        if profile.district_col else []
+    )
+    return render_template(
+        "home.html",
+        districts=districts,
+        total_rows=profile.total_rows,
+        param_count=len(profile.param_cols),
+        param_cols=profile.param_cols,
+    )
 
-    # ── Period-empty notice ─────────────────────────────────────────────────
-    if result.get("period_empty"):
-        st.markdown(
-            '<div class="warn-banner">⏱️ <b>No samples found within the selected period.</b> '
-            "Showing all available records. Broaden the date range to see more.</div>",
-            unsafe_allow_html=True,
-        )
 
-    # ── Historical notice ───────────────────────────────────────────────────
-    if "Is_Historical" in records.columns:
-        hist_count = records["Is_Historical"].sum()
-        if hist_count:
-            st.markdown(
-                f'<div class="warn-banner">🕰️ <b>{int(hist_count)} record(s) are Historical</b> '
-                "(collected more than 1 year ago). "
-                "They are labelled in the table below.</div>",
-                unsafe_allow_html=True,
-            )
+@app.route("/stations")
+def stations_ajax():
+    """AJAX endpoint: return stations for a selected district as JSON."""
+    df, profile, error = _get_data()
+    if error:
+        return jsonify({"stations": []})
+    district = request.args.get("district", "")
+    if not district or not profile.district_col or not profile.station_col:
+        return jsonify({"stations": []})
+    stations = data_loader.get_stations_for_district(
+        df, profile.district_col, profile.station_col, district
+    )
+    return jsonify({"stations": stations})
 
-    # ── Table ───────────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">📊 Measurement Records</div>',
-                unsafe_allow_html=True)
 
-    # Build display table
+@app.route("/search", methods=["POST"])
+def search():
+    df, profile, error = _get_data()
+    if error:
+        return render_template("error.html", error=error), 503
+
+    district   = request.form.get("district", "").strip()
+    station    = request.form.get("station", "").strip()
+    ward_input = request.form.get("ward_input", "").strip()
+    period     = request.form.get("period", "All available")
+    custom_start_str = request.form.get("custom_start", "")
+    custom_end_str   = request.form.get("custom_end", "")
+    selected_params_raw = request.form.getlist("params")
+
+    # Parse custom dates
+    from datetime import date
+    custom_start = custom_end = None
+    if period == "Custom":
+        try:
+            custom_start = date.fromisoformat(custom_start_str)
+            custom_end   = date.fromisoformat(custom_end_str)
+        except ValueError:
+            pass
+
+    # Validate
+    valid, err = validation.validate_search_inputs(district, station)
+    if not valid:
+        flash(err, "error")
+        return redirect(url_for("home"))
+
+    if "All parameters" in selected_params_raw or not selected_params_raw:
+        selected_params = profile.param_cols
+    else:
+        selected_params = selected_params_raw
+
+    result = analysis.run_search(
+        profile=profile,
+        district=district,
+        station=station,
+        ward_input=ward_input,
+        period=period,
+        selected_params=selected_params,
+        custom_start=custom_start,
+        custom_end=custom_end,
+    )
+
+    # Store result in session (serialise records to JSON)
+    records_json = result["records"].to_json(orient="split", date_format="iso")
+    session["search_result_meta"] = {
+        "total_found":     result["total_found"],
+        "period_found":    result["period_found"],
+        "period_empty":    result["period_empty"],
+        "warnings":        result["warnings"],
+        "ward_match":      result["ward_match"],
+        "param_cols_used": result["param_cols_used"],
+        "latest_date":     result["latest_date"],
+        "parsed_date_col": result["parsed_date_col"],
+        "district":        district,
+        "station":         station,
+        "ward_input":      ward_input,
+        "period":          period,
+    }
+    session["records_json"] = records_json
+
+    return redirect(url_for("results"))
+
+
+@app.route("/results")
+def results():
+    df, profile, error = _get_data()
+    if error:
+        return render_template("error.html", error=error), 503
+
+    meta = session.get("search_result_meta")
+    records_json = session.get("records_json")
+
+    if not meta:
+        flash("No search has been run yet.", "info")
+        return redirect(url_for("home"))
+
+    records = pd.read_json(io.StringIO(records_json), orient="split") if records_json else pd.DataFrame()
+
+    # Build display columns list
     display_cols = []
-    for role_col in [profile.district_col, profile.station_col]:
-        if role_col and role_col in records.columns:
-            display_cols.append(role_col)
-
-    if profile.date_col_raw and profile.date_col_raw in records.columns:
-        display_cols.append(profile.date_col_raw)
-
+    for c in [profile.district_col, profile.station_col, profile.date_col_raw]:
+        if c and c in records.columns:
+            display_cols.append(c)
     if "Age_Label" in records.columns:
         display_cols.append("Age_Label")
-
-    display_cols += [p for p in param_cols if p in records.columns]
-
-    if "Ward_Match_Status" not in records.columns:
-        records = records.copy()
-        records["Ward_Match_Status"] = ward_match.get("status", "N/A")
+    if "Ward_Match_Status" not in records.columns and not records.empty:
+        records["Ward_Match_Status"] = meta["ward_match"].get("status", "N/A")
+    if "Ward_Match_Status" in records.columns:
         display_cols.append("Ward_Match_Status")
+    for p in meta["param_cols_used"]:
+        if p in records.columns:
+            display_cols.append(p)
 
-    display_df = records[display_cols] if display_cols else records
-    st.dataframe(display_df, use_container_width=True, height=400)
+    display_df = records[display_cols] if display_cols and not records.empty else records
 
-    # ── Row detail link ─────────────────────────────────────────────────────
-    st.markdown(
-        '<p style="font-size:0.82rem; color:#3a5a8a;">💡 Enter a row index below '
-        "to inspect the full detail of that record.</p>",
-        unsafe_allow_html=True,
-    )
-    row_idx = st.number_input(
-        "Row index to inspect",
-        min_value=0,
-        max_value=max(len(records) - 1, 0),
-        value=0,
-        step=1,
-    )
-    if st.button("🔍 Open Detailed View"):
-        st.session_state.selected_row_idx = int(row_idx)
-        st.session_state.page = "🔍 Detailed Sample View"
-        st.rerun()
+    # Measurement summary
+    summary = analysis.summarise_measurements(records, meta["param_cols_used"])
 
-    # ── Measurement summary ─────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">📈 Parameter Summary</div>',
-                unsafe_allow_html=True)
-    summary = analysis.summarise_measurements(records, param_cols)
-    if summary.empty:
-        st.info("No numeric measurements available for this selection.")
-    else:
-        st.dataframe(summary, use_container_width=True)
-
-    # ── Source evidence ─────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">🔗 Source Evidence</div>',
-                unsafe_allow_html=True)
-    st.markdown(
-        '<div class="info-banner">'
-        "<b>Dataset:</b> Tamil Nadu Groundwater Quality (Cleaned CSV)<br>"
-        "<b>Official Source:</b> Central Ground Water Board (CGWB) — India<br>"
-        "<b>Data Type:</b> Groundwater chemistry from monitoring wells. "
-        "<b>NOT</b> verified treated drinking-water tap results.<br>"
-        "<b>Ward Mapping:</b> No verified ward-to-station mapping is present. "
-        "Ward associations are unverified proximity only."
-        "</div>",
-        unsafe_allow_html=True,
+    # Missing values report
+    missing_rpt = (
+        filtering.missing_value_report(records, meta["param_cols_used"])
+        if not records.empty else pd.DataFrame()
     )
 
-    # ── Downloads ───────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">⬇️ Download</div>',
-                unsafe_allow_html=True)
-    csv_bytes = display_df.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="⬇️  Download Results as CSV",
-        data=csv_bytes,
-        file_name="water_quality_results.csv",
-        mime="text/csv",
+    return render_template(
+        "results.html",
+        meta=meta,
+        records=display_df.to_dict(orient="records"),
+        columns=display_df.columns.tolist(),
+        summary=summary.to_dict(orient="records"),
+        missing=missing_rpt.to_dict(orient="records"),
+        row_count=len(records),
     )
 
-    # ── Generate report button ──────────────────────────────────────────────
-    st.markdown('<div class="section-heading">📄 Generate Report</div>',
-                unsafe_allow_html=True)
-    if st.button("📄 Generate Draft Report for Approval →"):
-        report_id = report_generator.create_report_id(
-            result.get("district", ""), result.get("station", "")
-        )
-        # Pull search params from the first record (best effort)
-        district_val = (records[profile.district_col].iloc[0]
-                        if profile.district_col and not records.empty else "Unknown")
-        station_val = (records[profile.station_col].iloc[0]
-                       if profile.station_col and not records.empty else "Unknown")
 
-        draft = report_generator.build_draft_report(
-            report_id=report_id,
-            district=district_val,
-            station=station_val,
-            ward_input=result.get("ward_input", ""),
-            period=result.get("period", "All available"),
-            records=records,
-            param_cols=param_cols,
-            ward_match=ward_match,
-            warnings=warnings,
-            latest_date=result.get("latest_date"),
-            period_empty=result.get("period_empty", False),
-            total_found=result["total_found"],
-            period_found=result["period_found"],
-            parsed_date_col=result.get("parsed_date_col"),
-        )
-        approval.save_draft(draft)
-        st.session_state.draft_report = draft
-        st.session_state.page = "📄 Report & Approval"
-        st.rerun()
+@app.route("/detail/<int:row_idx>")
+def detail(row_idx: int):
+    df, profile, error = _get_data()
+    if error:
+        return render_template("error.html", error=error), 503
 
+    records_json = session.get("records_json")
+    meta = session.get("search_result_meta")
 
-# ===========================================================================
-# Page 3 — Detailed Sample View
-# ===========================================================================
+    if not records_json or not meta:
+        flash("No search results. Run a search first.", "info")
+        return redirect(url_for("home"))
 
-def page_detail(profile: analysis.DatasetProfile):
-    st.markdown("""
-    <div class="title-block">
-      <h1>🔍 Detailed Sample View</h1>
-      <p>Full record details with provenance and data-quality notes.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    records = pd.read_json(io.StringIO(records_json), orient="split")
+    if records.empty or row_idx >= len(records):
+        flash("Row not found.", "error")
+        return redirect(url_for("results"))
 
-    if (
-        not st.session_state.search_done
-        or st.session_state.search_result is None
-        or st.session_state.search_result["records"].empty
-    ):
-        st.info("No search results yet. Run a search first.")
-        return
+    row = records.iloc[row_idx]
 
-    records: pd.DataFrame = st.session_state.search_result["records"]
-    idx = st.session_state.get("selected_row_idx", 0)
-    idx = min(idx, len(records) - 1)
+    # Build measurement rows
+    meas_rows = []
+    for col in meta["param_cols_used"]:
+        raw_val = row.get(col)
+        valid, disp = validation.validate_measurement_value(raw_val)
+        meas_rows.append({
+            "parameter": col,
+            "value": disp if valid else "Not available",
+            "status": "ok" if valid else "missing",
+        })
 
-    row = records.iloc[idx]
-    ward_match = st.session_state.search_result.get("ward_match", {})
-    param_cols = st.session_state.search_result.get("param_cols_used", [])
+    # Source evidence
+    prov_cols = profile.provenance_cols
+    evidence = source_verification.build_evidence_record(row, prov_cols)
+    source_warnings = source_verification.validate_source_fields(evidence)
 
-    # ── Navigation ──────────────────────────────────────────────────────────
-    c1, _, c2 = st.columns([1, 4, 1])
-    with c1:
-        if idx > 0 and st.button("← Previous"):
-            st.session_state.selected_row_idx = idx - 1
-            st.rerun()
-    with c2:
-        if idx < len(records) - 1 and st.button("Next →"):
-            st.session_state.selected_row_idx = idx + 1
-            st.rerun()
-
-    st.markdown(f"**Showing record {idx + 1} of {len(records)}**")
-
-    # ── Station / Location ──────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">📍 Location</div>',
-                unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"**District:** {row.get(profile.district_col, 'N/A')}")
-        st.markdown(f"**Station:** {row.get(profile.station_col, 'N/A')}")
-    with col2:
-        lat_col = _find_coord_col(records, "lat")
-        lon_col = _find_coord_col(records, "lon")
-        lat_val = row.get(lat_col, "N/A") if lat_col else "N/A"
-        lon_val = row.get(lon_col, "N/A") if lon_col else "N/A"
-        st.markdown(f"**Latitude:** {lat_val}")
-        st.markdown(f"**Longitude:** {lon_val}")
-
-    # ── Date info ──────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">📅 Sample Date</div>',
-                unsafe_allow_html=True)
+    # Date info
     raw_date = row.get(profile.date_col_raw, "N/A") if profile.date_col_raw else "N/A"
     age_label = row.get("Age_Label", "Date unknown")
     is_hist = row.get("Is_Historical")
 
-    st.markdown(f"**Collection Date (original):** {raw_date}")
-    if is_hist is True:
-        st.markdown(
-            f'<div class="warn-banner">🕰️ <b>Historical sample</b> — {age_label}. '
-            "This is NOT a current measurement.</div>",
-            unsafe_allow_html=True,
-        )
-    elif is_hist is False:
-        st.markdown(
-            f'<div class="approved-banner">📅 {age_label}</div>',
-            unsafe_allow_html=True,
-        )
+    # Coordinates
+    lat_col = _find_coord_col(records, "lat")
+    lon_col = _find_coord_col(records, "lon")
+
+    return render_template(
+        "detail.html",
+        row=row.to_dict(),
+        row_idx=row_idx,
+        total_rows=len(records),
+        district=row.get(profile.district_col, "N/A") if profile.district_col else "N/A",
+        station=row.get(profile.station_col, "N/A") if profile.station_col else "N/A",
+        raw_date=raw_date,
+        age_label=age_label,
+        is_historical=is_hist,
+        meas_rows=meas_rows,
+        evidence=evidence,
+        source_warnings=source_warnings,
+        ward_match=meta["ward_match"],
+        lat=row.get(lat_col, "N/A") if lat_col else "N/A",
+        lon=row.get(lon_col, "N/A") if lon_col else "N/A",
+    )
+
+
+@app.route("/generate_report", methods=["POST"])
+def generate_report():
+    df, profile, error = _get_data()
+    if error:
+        return render_template("error.html", error=error), 503
+
+    records_json = session.get("records_json")
+    meta = session.get("search_result_meta")
+
+    if not records_json or not meta:
+        flash("No search results to report on.", "error")
+        return redirect(url_for("home"))
+
+    records = pd.read_json(io.StringIO(records_json), orient="split")
+
+    report_id = report_generator.create_report_id(
+        meta.get("district", ""), meta.get("station", "")
+    )
+    draft = report_generator.build_draft_report(
+        report_id=report_id,
+        district=meta.get("district", ""),
+        station=meta.get("station", ""),
+        ward_input=meta.get("ward_input", ""),
+        period=meta.get("period", "All available"),
+        records=records,
+        param_cols=meta.get("param_cols_used", []),
+        ward_match=meta.get("ward_match", {}),
+        warnings=meta.get("warnings", []),
+        latest_date=meta.get("latest_date"),
+        period_empty=meta.get("period_empty", False),
+        total_found=meta.get("total_found", 0),
+        period_found=meta.get("period_found", 0),
+        parsed_date_col=meta.get("parsed_date_col"),
+    )
+    approval.save_draft(draft)
+    session["draft_report_id"] = report_id
+    session["draft_report_json"] = json.dumps(draft, default=str)
+
+    return redirect(url_for("report_page"))
+
+
+@app.route("/report")
+def report_page():
+    draft_json = session.get("draft_report_json")
+    if not draft_json:
+        flash("No draft report. Run a search and generate a report first.", "info")
+        return redirect(url_for("home"))
+
+    draft = json.loads(draft_json)
+    current_status = approval.get_report_status(draft["Report_ID"]) or "DRAFT"
+    draft["Approval_Status"] = current_status
+
+    return render_template("report.html", report=draft, status=current_status)
+
+
+@app.route("/approve/<report_id>", methods=["POST"])
+def approve(report_id: str):
+    user = session.get("user")
+    default_name = f"{user['full_name']} ({user['role']})" if user else "Anonymous Reviewer"
+    reviewer = request.form.get("reviewer", "").strip() or default_name
+    approval.approve_report(report_id, reviewer)
+    flash(f"✅ Report {report_id} approved by {reviewer}.", "success")
+
+    # Refresh session draft
+    loaded = approval.load_report_json(report_id)
+    if loaded:
+        loaded["Approval_Status"] = "APPROVED"
+        loaded["Approved_By"] = reviewer
+        session["draft_report_json"] = json.dumps(loaded, default=str)
+
+    return redirect(url_for("report_page"))
+
+
+# ---------------------------------------------------------------------------
+# Authentication routes
+# ---------------------------------------------------------------------------
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    next_url = request.args.get("next") or request.form.get("next") or url_for("home")
+
+    if request.method == "POST":
+        action = request.form.get("action", "login")
+
+        if action == "register":
+            username = request.form.get("reg_username", "").strip()
+            password = request.form.get("reg_password", "")
+            full_name = request.form.get("reg_full_name", "").strip()
+            role = request.form.get("reg_role", "Public Citizen / Researcher")
+            department = request.form.get("reg_department", "").strip()
+            email = request.form.get("reg_email", "").strip()
+
+            success, msg = auth.register_user(
+                username=username,
+                password=password,
+                full_name=full_name,
+                role=role,
+                department=department,
+                email=email,
+            )
+            if success:
+                flash(f"✅ {msg}", "success")
+                user = auth.authenticate_user(username, password)
+                if user:
+                    session["user"] = user
+                    role_url = get_role_dashboard_url(user.get("role", ""))
+                    target = request.args.get("next") or request.form.get("next")
+                    if not target or target in ("/", url_for("home"), url_for("login")):
+                        target = role_url
+                    return redirect(target)
+                return redirect(url_for("login"))
+            else:
+                flash(f"⛔ {msg}", "error")
+                return render_template("login.html", active_tab="register", next_url=next_url)
+
+        # Standard login
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        user = auth.authenticate_user(username, password)
+        if user:
+            session["user"] = user
+            flash(f"👋 Welcome back, {user['full_name']} ({user['role']})!", "success")
+            role_url = get_role_dashboard_url(user.get("role", ""))
+            target = request.args.get("next") or request.form.get("next")
+            if not target or target in ("/", url_for("home"), url_for("login")):
+                target = role_url
+            return redirect(target)
+        else:
+            flash("⛔ Invalid username or password. Please verify your credentials or select a quick demo account below.", "error")
+            return render_template("login.html", active_tab="login", next_url=next_url)
+
+
+    # GET request
+    return render_template("login.html", active_tab="login", next_url=next_url)
+
+
+@app.route("/logout")
+def logout():
+    user = session.pop("user", None)
+    if user:
+        flash(f"👋 You have been logged out. Have a great day, {user['full_name']}!", "info")
     else:
-        st.markdown(
-            '<div class="info-banner">📅 Date unknown — cannot determine age.</div>',
-            unsafe_allow_html=True,
-        )
+        flash("You are already logged out.", "info")
+    return redirect(url_for("home"))
 
-    # ── Measurements ───────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">🧪 Measurements</div>',
-                unsafe_allow_html=True)
-    meas_rows = []
-    for col in param_cols:
-        raw_val = row.get(col)
-        valid, disp = validation.validate_measurement_value(raw_val)
-        meas_rows.append({
-            "Parameter": col,
-            "Measured Value": disp if valid else "Not available",
-            "Unit": "(see column name — no separate unit column in dataset)",
-            "Data Status": "OK" if valid else "Missing",
-        })
-    if meas_rows:
-        st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
-    else:
-        st.info("No numeric parameters available for this record.")
 
-    # ── Ward match ──────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">🗺️ Ward Match Status</div>',
-                unsafe_allow_html=True)
-    wstatus = ward_match.get("status", "Not requested")
-    if wstatus == "Unverified":
-        st.markdown(
-            f'<div class="danger-banner">⚠️ <b>Unverified:</b> '
-            f'{ward_match.get("message", "")}</div>',
-            unsafe_allow_html=True,
-        )
-    elif wstatus == "Not requested":
-        st.info("No ward was specified for this search.")
-    else:
-        st.success(f"Ward match: {wstatus}")
+@app.route("/reject/<report_id>", methods=["POST"])
+def reject(report_id: str):
+    reason = request.form.get("reason", "").strip()
+    approval.reject_report(report_id, reason)
+    flash(f"❌ Report {report_id} rejected.", "warning")
 
-    # ── Source evidence ──────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">🔗 Source Evidence</div>',
-                unsafe_allow_html=True)
-    prov_cols = profile.provenance_cols
-    evidence = source_verification.build_evidence_record(row, prov_cols)
-    for k, v in evidence.items():
-        st.markdown(f"- **{k.replace('_', ' ')}:** {v}")
+    loaded = approval.load_report_json(report_id)
+    if loaded:
+        loaded["Approval_Status"] = "REJECTED"
+        session["draft_report_json"] = json.dumps(loaded, default=str)
 
-    source_warnings = source_verification.validate_source_fields(evidence)
-    for sw in source_warnings:
-        st.markdown(f'<div class="warn-banner">{sw}</div>', unsafe_allow_html=True)
+    return redirect(url_for("report_page"))
 
-    # ── Original row data ────────────────────────────────────────────────────
-    with st.expander("📂 Original raw row from dataset"):
-        st.dataframe(row.to_frame().T, use_container_width=True)
 
+@app.route("/history")
+def history():
+    reports = approval.get_all_reports(limit=100)
+    return render_template("history.html", reports=reports)
+
+
+@app.route("/history/load/<report_id>")
+def load_report(report_id: str):
+    loaded = approval.load_report_json(report_id)
+    if not loaded:
+        flash("Report not found.", "error")
+        return redirect(url_for("history"))
+    session["draft_report_json"] = json.dumps(loaded, default=str)
+    session["draft_report_id"] = report_id
+    return redirect(url_for("report_page"))
+
+
+@app.route("/download/results")
+def download_results():
+    records_json = session.get("records_json")
+    meta = session.get("search_result_meta")
+    if not records_json:
+        flash("No results to download.", "error")
+        return redirect(url_for("results"))
+
+    records = pd.read_json(io.StringIO(records_json), orient="split")
+    # Only show param cols + metadata cols
+    param_cols = meta.get("param_cols_used", []) if meta else []
+    csv_bytes = records.to_csv(index=False).encode("utf-8")
+
+    buf = io.BytesIO(csv_bytes)
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="water_quality_results.csv",
+    )
+
+
+@app.route("/download/report")
+def download_report():
+    draft_json = session.get("draft_report_json")
+    records_json = session.get("records_json")
+    if not draft_json:
+        flash("No report to download.", "error")
+        return redirect(url_for("report_page"))
+
+    draft = json.loads(draft_json)
+    records = pd.read_json(io.StringIO(records_json), orient="split") if records_json else pd.DataFrame()
+
+    report_df = report_generator.report_to_dataframe(draft, records)
+    csv_bytes = report_df.to_csv(index=False).encode("utf-8")
+
+    buf = io.BytesIO(csv_bytes)
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=f"report_{draft['Report_ID']}.csv",
+    )
+
+
+@app.route("/api/dataset-info")
+def api_dataset_info():
+    """JSON endpoint for dataset stats."""
+    df, profile, error = _get_data()
+    if error:
+        return jsonify({"error": error}), 503
+    return jsonify({
+        "total_rows": profile.total_rows,
+        "param_cols": profile.param_cols,
+        "district_col": profile.district_col,
+        "station_col": profile.station_col,
+        "date_col": profile.date_col_raw,
+        "empty_cols": profile.completely_empty_cols,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _find_coord_col(df: pd.DataFrame, kind: str) -> str | None:
     targets = ["lat", "latitude"] if kind == "lat" else ["lon", "lng", "longitude"]
@@ -843,284 +655,11 @@ def _find_coord_col(df: pd.DataFrame, kind: str) -> str | None:
     return None
 
 
-# ===========================================================================
-# Page 4 — Report & Approval
-# ===========================================================================
-
-def page_report_approval():
-    st.markdown("""
-    <div class="title-block">
-      <h1>📄 Report & Human Approval</h1>
-      <p>Review the draft report carefully before approving for publication.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    draft = st.session_state.get("draft_report")
-
-    if draft is None:
-        st.info(
-            "No draft report exists yet. Run a search, view results, "
-            "and click **Generate Draft Report**."
-        )
-        return
-
-    # ── Report banner ────────────────────────────────────────────────────────
-    current_status = approval.get_report_status(draft["Report_ID"]) or "DRAFT"
-    status_color = {
-        "DRAFT":    "#e8920a",
-        "APPROVED": "#1e8a4a",
-        "REJECTED": "#c0392b",
-    }.get(current_status, "#6a7f99")
-
-    st.markdown(
-        f'<div style="background:{status_color}22; border-left:5px solid {status_color}; '
-        f'border-radius:8px; padding:0.8rem 1.2rem; margin-bottom:1rem;">'
-        f'<b>Report ID:</b> {draft["Report_ID"]} &nbsp;|&nbsp; '
-        f'<b>Status:</b> {current_status} &nbsp;|&nbsp; '
-        f'<b>Generated:</b> {draft.get("Generated_At", "")}'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="danger-banner">⚠️ <b>Important:</b> This is a DRAFT groundwater report. '
-        "It is NOT a ward drinking-water safety certificate. "
-        "You must review all warnings before approving.</div>",
-        unsafe_allow_html=True,
-    )
-
-    # ── Report fields ────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">📋 Report Details</div>',
-                unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    fields_l = [
-        ("Report Type",         draft.get("Report_Type")),
-        ("State",               draft.get("State")),
-        ("District",            draft.get("District")),
-        ("Station",             draft.get("Station")),
-        ("Ward Input",          draft.get("Ward_Input")),
-        ("Period Requested",    draft.get("Period_Requested")),
-    ]
-    fields_r = [
-        ("Total Records Found",  draft.get("Total_Records_Found")),
-        ("Period Records Found", draft.get("Period_Records_Found")),
-        ("Latest Sample Date",   draft.get("Latest_Sample_Date")),
-        ("Sample Date Range",    draft.get("Sample_Date_Range")),
-        ("Ward Match Status",    draft.get("Ward_Match_Status")),
-    ]
-    with col1:
-        for label, val in fields_l:
-            st.markdown(f"**{label}:** {val}")
-    with col2:
-        for label, val in fields_r:
-            st.markdown(f"**{label}:** {val}")
-
-    # ── Measurement summary ───────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">📊 Measurement Summary</div>',
-                unsafe_allow_html=True)
-    meas = draft.get("Measurement_Summary", [])
-    if meas:
-        st.dataframe(pd.DataFrame(meas), use_container_width=True)
-    else:
-        st.info("No numeric measurements in this report.")
-
-    # ── Warnings ──────────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">⚠️ Warnings</div>',
-                unsafe_allow_html=True)
-    for w in draft.get("Warnings", []):
-        st.markdown(f'<div class="warn-banner">{w}</div>', unsafe_allow_html=True)
-    if not draft.get("Warnings"):
-        st.success("No warnings.")
-
-    # ── Limitations ───────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">🚧 Limitations</div>',
-                unsafe_allow_html=True)
-    for lim in draft.get("Limitations", []):
-        st.markdown(f"- {lim}")
-
-    # ── Source references ─────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">🔗 Source References</div>',
-                unsafe_allow_html=True)
-    for ref in draft.get("Source_References", []):
-        st.markdown(f"- {ref}")
-
-    # ── Approval buttons ──────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">✅ Human Approval</div>',
-                unsafe_allow_html=True)
-    st.markdown(
-        '<div class="info-banner">👁️ You must review all sections above before approving. '
-        "Approval marks this report as reviewed — it does NOT certify water safety.</div>",
-        unsafe_allow_html=True,
-    )
-
-    if current_status == "APPROVED":
-        st.markdown(
-            '<div class="approved-banner">✅ This report has already been APPROVED.</div>',
-            unsafe_allow_html=True,
-        )
-    elif current_status == "REJECTED":
-        st.markdown(
-            '<div class="danger-banner">🔴 This report was REJECTED.</div>',
-            unsafe_allow_html=True,
-        )
-    else:
-        reviewer_name = st.text_input(
-            "Your name (reviewer)",
-            value="Anonymous Reviewer",
-        )
-        col_a, col_r = st.columns(2)
-        with col_a:
-            if st.button("✅ Approve Report", use_container_width=True):
-                approval.approve_report(draft["Report_ID"], reviewer_name)
-                draft["Approval_Status"] = "APPROVED"
-                draft["Approved_By"] = reviewer_name
-                st.session_state.draft_report = draft
-                st.success(f"✅ Report {draft['Report_ID']} approved by {reviewer_name}.")
-                st.rerun()
-        with col_r:
-            rejection_reason = st.text_input("Rejection reason (optional)")
-            if st.button("❌ Reject Report", use_container_width=True):
-                approval.reject_report(draft["Report_ID"], rejection_reason)
-                draft["Approval_Status"] = "REJECTED"
-                st.session_state.draft_report = draft
-                st.warning(f"Report {draft['Report_ID']} has been rejected.")
-                st.rerun()
-
-    # ── Downloads ─────────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">⬇️ Download Report</div>',
-                unsafe_allow_html=True)
-    records = (
-        st.session_state.search_result["records"]
-        if st.session_state.search_result
-        else pd.DataFrame()
-    )
-    param_cols = (
-        st.session_state.search_result.get("param_cols_used", [])
-        if st.session_state.search_result
-        else []
-    )
-    report_df = report_generator.report_to_dataframe(draft, records)
-    csv_bytes = report_df.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="⬇️  Download Report as CSV",
-        data=csv_bytes,
-        file_name=f"report_{draft['Report_ID']}.csv",
-        mime="text/csv",
-    )
-
-
-# ===========================================================================
-# Page 5 — Report History
-# ===========================================================================
-
-def page_history():
-    st.markdown("""
-    <div class="title-block">
-      <h1>📜 Report History</h1>
-      <p>All generated draft and approved reports stored locally.</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    reports = approval.get_all_reports(limit=100)
-
-    if not reports:
-        st.info("No reports have been generated yet.")
-        return
-
-    df_hist = pd.DataFrame(reports)
-
-    # Colour-code status
-    def style_status(val):
-        colors = {
-            "APPROVED": "background-color:#d4edda; color:#1b5e20",
-            "REJECTED": "background-color:#fde8e8; color:#7b1515",
-            "DRAFT":    "background-color:#fff8e1; color:#7a5000",
-        }
-        return colors.get(val, "")
-
-    styled = df_hist.style.applymap(style_status, subset=["approval_status"])
-    st.dataframe(styled, use_container_width=True)
-
-    # Allow reloading a past report
-    st.markdown('<div class="section-heading">🔄 Reload a Report</div>',
-                unsafe_allow_html=True)
-    report_ids = df_hist["report_id"].tolist()
-    chosen_id = st.selectbox("Select a Report ID", report_ids)
-    if st.button("Load Report"):
-        loaded = approval.load_report_json(chosen_id)
-        if loaded:
-            st.session_state.draft_report = loaded
-            st.session_state.page = "📄 Report & Approval"
-            st.success(f"Loaded report {chosen_id}.")
-            st.rerun()
-        else:
-            st.error("Could not load report JSON.")
-
-
-# ===========================================================================
-# Sidebar: Dataset info expander
-# ===========================================================================
-
-def _dataset_info_expander(profile: analysis.DatasetProfile):
-    with st.sidebar.expander("📊 Dataset Info"):
-        st.markdown(f"**Rows:** {profile.total_rows:,}")
-        st.markdown(f"**Parameters:** {len(profile.param_cols)}")
-        st.markdown(f"**District col:** `{profile.district_col}`")
-        st.markdown(f"**Station col:** `{profile.station_col}`")
-        st.markdown(f"**Date col:** `{profile.date_col_raw}`")
-        if profile.completely_empty_cols:
-            st.markdown(
-                f"**Empty cols ({len(profile.completely_empty_cols)}):** "
-                + ", ".join(profile.completely_empty_cols[:5])
-            )
-
-
-# ===========================================================================
-# Main entry point
-# ===========================================================================
-
-def main():
-    _init_state()
-    page = _sidebar()
-
-    # ── Check if dataset exists ─────────────────────────────────────────────
-    if not data_loader.file_exists():
-        st.markdown("""
-        <div class="title-block">
-          <h1>💧 Ward Water Quality Reporter</h1>
-          <p>Dataset not found.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.error(
-            "🚫 **Dataset not found!**\n\n"
-            f"Please place your CSV file at:\n\n"
-            f"`{data_loader.get_csv_path()}`\n\n"
-            "The expected filename is: `tamil_nadu_groundwater_quality_cleaned.csv`\n\n"
-            "Once the file is in the `data/` folder, refresh this page."
-        )
-        return
-
-    # ── Load data ────────────────────────────────────────────────────────────
-    try:
-        df, profile = _load_data()
-    except (FileNotFoundError, ValueError) as exc:
-        st.error(f"🚫 Error loading dataset: {exc}")
-        return
-
-    _dataset_info_expander(profile)
-
-    # ── Route to page ────────────────────────────────────────────────────────
-    if page == "🏠 Home & Search":
-        page_home(df, profile)
-    elif page == "📋 Search Results":
-        page_results(profile)
-    elif page == "🔍 Detailed Sample View":
-        page_detail(profile)
-    elif page == "📄 Report & Approval":
-        page_report_approval()
-    elif page == "📜 Report History":
-        page_history()
-
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_DEBUG", "true").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug)

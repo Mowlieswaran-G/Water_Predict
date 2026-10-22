@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Senior Hydrologist Dashboard — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Role Hero -->
+  <div class="role-hero hydrologist-theme">
+    <div class="role-hero-content">
+      <div class="role-pill">🧪 Hydrochemical Analysis</div>
+      <h1>Senior Hydrologist Dashboard</h1>
+      <p class="role-subtitle">
+        Welcome, <strong>{{ current_user.full_name }}</strong> ({{ current_user.department }}).
+        Analyze groundwater chemistry profiles, audit unit normalizations, and verify scientific integrity.
+      </p>
+    </div>
+    <div class="role-hero-badge">
+      <span class="officer-shield">💧</span>
+      <span class="officer-id">HYDROLOGIST #{{ current_user.username | upper }}</span>
+    </div>
+  </div>
+
+  <!-- Metric Row -->
+  <div class="metric-row">
+    <div class="metric-card metric-blue">
+      <span class="metric-value">1 mg/L = 1,000 µg/L</span>
+      <span class="metric-label">Unit Normalization Standard</span>
+    </div>
+    <div class="metric-card metric-green">
+      <span class="metric-value">Active</span>
+      <span class="metric-label">Data Loader Pipeline</span>
+    </div>
+    <div class="metric-card metric-amber">
+      <span class="metric-value">pH Locked</span>
+      <span class="metric-label">Non-Concentration Safety Gate</span>
+    </div>
+    <div class="metric-card metric-grey">
+      <span class="metric-value">CGWB TN</span>
+      <span class="metric-label">Hydrochemical Source</span>
+    </div>
+  </div>
+
+  <!-- Interactive Unit Normalization Bench (TC3 Test & Experimentation) -->
+  <div class="card" style="margin-bottom:1.75rem;">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="20"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <h2>Scientific Workbench: Live Unit Normalization Bench (TC3 Demonstration)</h2>
+    </div>
+    <div class="card-body" style="padding:1.5rem;">
+      <p style="color:var(--grey-600);margin-bottom:1.25rem;">
+        Test concentration conversions in real-time. Confirms mathematical equivalence between milligrams per litre (mg/L) and micrograms per litre (µg/L) while blocking non-concentration parameters (like pH).
+      </p>
+
+      <div class="converter-box">
+        <div class="converter-row">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Value</label>
+            <input type="number" id="testValue" class="form-input" value="1.0" step="any" oninput="runLiveConversion()" />
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Source Unit</label>
+            <select id="sourceUnit" class="form-select" onchange="runLiveConversion()">
+              <option value="mg/L">mg/L (milligrams/litre)</option>
+              <option value="µg/L">µg/L (micrograms/litre)</option>
+              <option value="pH">pH (dimensionless - should be blocked)</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Target Unit</label>
+            <select id="targetUnit" class="form-select" onchange="runLiveConversion()">
+              <option value="µg/L">µg/L (micrograms/litre)</option>
+              <option value="mg/L">mg/L (milligrams/litre)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="converterResult" class="converter-output">
+          <span class="output-formula">1.0 mg/L = 1,000.0 µg/L</span>
+          <span class="badge badge-success">✅ Mathematically Equivalent (TC3 Verified)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Groundwater Parameter Standards Table -->
+  <div class="card">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="20"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <h2>CGWB Groundwater Parameters &amp; BIS 10500 Guidelines Reference</h2>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Standard Unit</th>
+            <th>Acceptable Limit (BIS)</th>
+            <th>Permissible Limit (BIS)</th>
+            <th>Hydrochemical Significance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>pH</strong></td>
+            <td>Dimensionless</td>
+            <td>6.5 – 8.5</td>
+            <td>No relaxation</td>
+            <td>Acid-base equilibrium; blocked from unit scaling</td>
+          </tr>
+          <tr>
+            <td><strong>Electrical Conductivity (EC)</strong></td>
+            <td>µS/cm at 25°C</td>
+            <td>750</td>
+            <td>2,250</td>
+            <td>Measure of total dissolved ionic concentration</td>
+          </tr>
+          <tr>
+            <td><strong>Total Dissolved Solids (TDS)</strong></td>
+            <td>mg/L</td>
+            <td>500</td>
+            <td>2,000</td>
+            <td>Aggregate mineral content in groundwater</td>
+          </tr>
+          <tr>
+            <td><strong>Fluoride (F)</strong></td>
+            <td>mg/L</td>
+            <td>1.0</td>
+            <td>1.5</td>
+            <td>Critical ion; excessive leads to skeletal/dental fluorosis</td>
+          </tr>
+          <tr>
+            <td><strong>Chloride (Cl)</strong></td>
+            <td>mg/L</td>
+            <td>250</td>
+            <td>1,000</td>
+            <td>Salinity indicator; elevated in coastal aquifers</td>
+          </tr>
+          <tr>
+            <td><strong>Nitrate (NO3)</strong></td>
+            <td>mg/L</td>
+            <td>45</td>
+            <td>No relaxation</td>
+            <td>Agricultural runoff &amp; sewage contamination marker</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Search Launcher -->
+  <div style="margin-top:1.5rem;text-align:center;">
+    <a href="{{ url_for('search_explorer') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:0.5rem;">
+      🔍 Launch Full Groundwater Dataset Search
+    </a>
+  </div>
+
+</div>
+
+<script>
+function runLiveConversion() {
+  const val = parseFloat(document.getElementById('testValue').value);
+  const src = document.getElementById('sourceUnit').value;
+  const tgt = document.getElementById('targetUnit').value;
+  const out = document.getElementById('converterResult');
+
+  if (isNaN(val)) {
+    out.innerHTML = '<span class="output-error">⚠️ Please enter a valid numeric value</span>';
+    return;
+  }
+
+  if (src === 'pH') {
+    out.innerHTML = `
+      <span class="output-formula">pH ${val} cannot be converted to concentration units.</span>
+      <span class="badge badge-danger">🛡️ Safety Gate: Dimensionless unit blocked from conversion</span>
+    `;
+    return;
+  }
+
+  if (src === tgt) {
+    out.innerHTML = `
+      <span class="output-formula">${val} ${src} = ${val} ${tgt}</span>
+      <span class="badge badge-grey">Same Unit (No scaling needed)</span>
+    `;
+    return;
+  }
+
+  if (src === 'mg/L' && tgt === 'µg/L') {
+    const converted = val * 1000;
+    out.innerHTML = `
+      <span class="output-formula">${val} mg/L = ${converted.toLocaleString()} µg/L</span>
+      <span class="badge badge-success">✅ Mathematically Equivalent (1 mg/L = 1,000 µg/L)</span>
+    `;
+  } else if (src === 'µg/L' && tgt === 'mg/L') {
+    const converted = val / 1000;
+    out.innerHTML = `
+      <span class="output-formula">${val} µg/L = ${converted} mg/L</span>
+      <span class="badge badge-success">✅ Mathematically Equivalent (1 µg/L = 0.001 mg/L)</span>
+    `;
+  }
+}
+</script>
+{% endblock %}

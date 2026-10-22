@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}Sign In — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+
+  {% if current_user %}
+  <!-- ════════════════════════════════════════════════════════
+       ALREADY LOGGED IN VIEW
+  ════════════════════════════════════════════════════════ -->
+  <div class="auth-card profile-card">
+    <div class="auth-header">
+      <div class="auth-badge-icon">💧</div>
+      <h1>Active Officer Profile</h1>
+      <p class="auth-subtitle">You are signed in to the Ward Water Quality Verification Portal.</p>
+    </div>
+
+    <div class="profile-details">
+      <div class="profile-avatar-large">
+        {{ current_user.full_name[0] | upper }}
+      </div>
+      <h2 class="profile-name">{{ current_user.full_name }}</h2>
+      <span class="user-role-badge {% if current_user.is_reviewer %}badge-officer{% else %}badge-citizen{% endif %}" style="font-size:0.9rem;padding:0.35rem 0.85rem;">
+        {{ current_user.role }}
+      </span>
+
+      <div class="profile-meta-grid">
+        <div class="profile-meta-item">
+          <span class="meta-label">Username</span>
+          <span class="meta-val">@{{ current_user.username }}</span>
+        </div>
+        <div class="profile-meta-item">
+          <span class="meta-label">Department</span>
+          <span class="meta-val">{{ current_user.department or 'Public Watch' }}</span>
+        </div>
+        <div class="profile-meta-item">
+          <span class="meta-label">Official Email</span>
+          <span class="meta-val">{{ current_user.email or 'N/A' }}</span>
+        </div>
+        <div class="profile-meta-item">
+          <span class="meta-label">Review Privileges</span>
+          <span class="meta-val highlight-green">
+            {% if current_user.is_reviewer %}✅ Authorized to Approve Reports{% else %}👁️ Read-Only &amp; Exploration{% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-actions" style="margin-top:2rem;display:flex;gap:1rem;justify-content:center;">
+      <a href="{{ url_for('home') }}" class="btn btn-primary">← Go to Search &amp; Dashboard</a>
+      <a href="{{ url_for('logout') }}" class="btn btn-reject">🚪 Sign Out</a>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- ════════════════════════════════════════════════════════
+       LOGIN / REGISTER TABS
+  ════════════════════════════════════════════════════════ -->
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-badge-icon">💧</div>
+      <h1>Water Quality Portal</h1>
+      <p class="auth-subtitle">Sign in to review, audit, and approve official ward water reports.</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab-btn {% if active_tab != 'register' %}active{% endif %}" id="tabBtnLogin" onclick="switchTab('login')">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Sign In
+      </button>
+      <button type="button" class="auth-tab-btn {% if active_tab == 'register' %}active{% endif %}" id="tabBtnRegister" onclick="switchTab('register')">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Create Account
+      </button>
+    </div>
+
+    <!-- Quick Demo Accounts Bar -->
+    <div class="demo-account-bar">
+      <div class="demo-bar-title">
+        <span>⚡ Quick One-Click Demo Logins</span>
+      </div>
+      <div class="demo-chips">
+        {% for u in demo_users %}
+          <button type="button" class="demo-chip"
+                  onclick="fillDemo('{{ u.username }}', '{{ u.password }}')"
+                  title="Log in as {{ u.full_name }} ({{ u.role }})">
+            <span class="chip-avatar">{{ u.full_name[0] | upper }}</span>
+            <div class="chip-info">
+              <span class="chip-name">{{ u.full_name }}</span>
+              <span class="chip-role">{{ u.role }}</span>
+            </div>
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ── Tab 1: Login Form ──────────────────────────────── -->
+    <div id="loginFormContainer" style="display: {% if active_tab == 'register' %}none{% else %}block{% endif %};">
+      <form action="{{ url_for('login') }}" method="POST" class="auth-form" id="loginForm">
+        <input type="hidden" name="action" value="login" />
+        <input type="hidden" name="next" value="{{ next_url }}" />
+
+        <div class="form-group">
+          <label class="form-label" for="username">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Username or Email
+          </label>
+          <input type="text" name="username" id="username" class="form-input"
+                 placeholder="e.g. officer, senthil, or citizen" required autofocus autocomplete="username" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">
+            <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Password
+          </label>
+          <div class="input-password-wrapper">
+            <input type="password" name="password" id="password" class="form-input"
+                   placeholder="Enter your password" required autocomplete="current-password" />
+            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('password', this)" title="Show/Hide password">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row-between">
+          <label class="checkbox-label">
+            <input type="checkbox" name="remember" checked />
+            <span>Remember session on this device</span>
+          </label>
+          <span class="demo-hint-text">Pass: <code>water2026</code></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-auth-submit">
+          <span>Sign In to Portal</span>
+          <svg viewBox="0 0 24 24" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- ── Tab 2: Register Form ───────────────────────────── -->
+    <div id="registerFormContainer" style="display: {% if active_tab == 'register' %}block{% else %}none{% endif %};">
+      <form action="{{ url_for('login') }}" method="POST" class="auth-form" id="registerForm">
+        <input type="hidden" name="action" value="register" />
+        <input type="hidden" name="next" value="{{ next_url }}" />
+
+        <div class="form-group">
+          <label class="form-label" for="reg_full_name">Full Name *</label>
+          <input type="text" name="reg_full_name" id="reg_full_name" class="form-input"
+                 placeholder="e.g. Dr. Rajesh Kannan" required />
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="reg_username">Username *</label>
+            <input type="text" name="reg_username" id="reg_username" class="form-input"
+                   placeholder="e.g. rajesh_k" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg_email">Official Email</label>
+            <input type="email" name="reg_email" id="reg_email" class="form-input"
+                   placeholder="name@dept.gov.in" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg_role">Designation / Role *</label>
+          <select name="reg_role" id="reg_role" class="form-input" required>
+            {% for r in available_roles %}
+              <option value="{{ r }}">{{ r }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg_department">Department / Agency</label>
+          <input type="text" name="reg_department" id="reg_department" class="form-input"
+                 placeholder="e.g. Tamil Nadu Water Supply Board (TWAD)" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg_password">Create Password *</label>
+          <div class="input-password-wrapper">
+            <input type="password" name="reg_password" id="reg_password" class="form-input"
+                   placeholder="At least 4 characters" required />
+            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('reg_password', this)" title="Show/Hide password">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-green btn-block btn-auth-submit">
+          <span>Create Account &amp; Sign In</span>
+          <svg viewBox="0 0 24 24" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- Security footnote -->
+    <div class="auth-footer-note">
+      <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      <span>Official CGWB Groundwater Transparency Project • Audit trails persisted in SQLite.</span>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function switchTab(tab) {
+  const loginContainer = document.getElementById('loginFormContainer');
+  const regContainer = document.getElementById('registerFormContainer');
+  const tabBtnLogin = document.getElementById('tabBtnLogin');
+  const tabBtnRegister = document.getElementById('tabBtnRegister');
+
+  if (tab === 'register') {
+    loginContainer.style.display = 'none';
+    regContainer.style.display = 'block';
+    tabBtnLogin.classList.remove('active');
+    tabBtnRegister.classList.add('active');
+  } else {
+    loginContainer.style.display = 'block';
+    regContainer.style.display = 'none';
+    tabBtnRegister.classList.remove('active');
+    tabBtnLogin.classList.add('active');
+  }
+}
+
+function fillDemo(username, password) {
+  switchTab('login');
+  const uInput = document.getElementById('username');
+  const pInput = document.getElementById('password');
+  uInput.value = username;
+  pInput.value = password;
+  uInput.focus();
+  // Brief highlight effect
+  uInput.style.borderColor = 'var(--primary-color, #0ea5e9)';
+  pInput.style.borderColor = 'var(--primary-color, #0ea5e9)';
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+</script>
+{% endblock %}

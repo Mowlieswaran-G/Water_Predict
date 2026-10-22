@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Home & Search — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ───────────────────────────────────────────── -->
+<div class="hero-block">
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-badge">💧 Groundwater Quality</div>
+    <h1 class="hero-title">Ward Water Quality Reporter</h1>
+    <p class="hero-subtitle">Explore available groundwater records with transparent sources and verified sample dates.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-value">{{ "{:,}".format(total_rows) }}</span>
+        <span class="hero-stat-label">Records</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-value">{{ param_count }}</span>
+        <span class="hero-stat-label">Parameters</span>
+      </div>
+      <div class="hero-stat-divider"></div>
+      <div class="hero-stat">
+        <span class="hero-stat-value">TN</span>
+        <span class="hero-stat-label">Tamil Nadu</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Dataset notice ─────────────────────────────────── -->
+<div class="alert alert-info" style="margin-bottom:1.5rem;">
+  <svg viewBox="0 0 24 24" width="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <strong>About this data:</strong> Records are from Central Ground Water Board (CGWB) monitoring wells.
+  This is groundwater chemistry data — <strong>not verified treated drinking-water tap results</strong>.
+</div>
+
+<!-- ── Search form ────────────────────────────────────── -->
+<div class="card search-card">
+  <div class="card-header">
+    <svg viewBox="0 0 24 24" width="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <h2>Find Water-Quality Records</h2>
+  </div>
+
+  <form action="{{ url_for('search') }}" method="POST" id="searchForm" class="search-form">
+
+    <div class="form-grid">
+
+      <!-- State (fixed) -->
+      <div class="form-group">
+        <label class="form-label">State</label>
+        <input type="text" class="form-input" value="Tamil Nadu" disabled />
+        <input type="hidden" name="state" value="Tamil Nadu" />
+      </div>
+
+      <!-- District -->
+      <div class="form-group">
+        <label class="form-label" for="district">District <span class="required">*</span></label>
+        <select name="district" id="district" class="form-select" required>
+          <option value="">— select district —</option>
+          {% for d in districts %}
+            <option value="{{ d }}">{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Station -->
+      <div class="form-group">
+        <label class="form-label" for="station">Sampling Station <span class="required">*</span></label>
+        <select name="station" id="station" class="form-select" required>
+          <option value="">— select district first —</option>
+        </select>
+        <span class="form-hint" id="stationHint">Stations load after you pick a district.</span>
+      </div>
+
+      <!-- Ward -->
+      <div class="form-group">
+        <label class="form-label" for="ward_input">Ward Name or Number <span class="optional">(optional)</span></label>
+        <input type="text" name="ward_input" id="ward_input" class="form-input"
+               placeholder="e.g. Ward 12 or Adyar Ward" />
+        <span class="form-hint ward-hint">
+          ⚠️ The current dataset has <strong>no verified ward-to-station mapping</strong>.
+          Ward entries will be marked <strong>Unverified</strong>.
+        </span>
+      </div>
+
+      <!-- Date period -->
+      <div class="form-group">
+        <label class="form-label" for="period">Date Period <span class="required">*</span></label>
+        <select name="period" id="period" class="form-select">
+          <option value="All available" selected>All available records</option>
+          <option value="Last 30 days">Last 30 days</option>
+          <option value="Last 6 months">Last 6 months</option>
+          <option value="Last 1 year">Last 1 year</option>
+          <option value="Custom">Custom range</option>
+        </select>
+      </div>
+
+      <!-- Custom dates (hidden by default) -->
+      <div class="form-group form-group-pair" id="customDateRow" style="display:none;">
+        <div>
+          <label class="form-label" for="custom_start">From</label>
+          <input type="date" name="custom_start" id="custom_start" class="form-input" />
+        </div>
+        <div>
+          <label class="form-label" for="custom_end">To</label>
+          <input type="date" name="custom_end" id="custom_end" class="form-input" />
+        </div>
+      </div>
+
+    </div><!-- /form-grid -->
+
+    <!-- Parameters -->
+    <div class="form-group" style="margin-top:1rem;">
+      <label class="form-label">Water-Quality Parameters</label>
+      <div class="param-chips" id="paramChips">
+        <label class="chip chip-all">
+          <input type="checkbox" name="params" value="All parameters" checked id="chipAll" />
+          <span>All Parameters</span>
+        </label>
+        {% for p in param_cols %}
+          <label class="chip">
+            <input type="checkbox" name="params" value="{{ p }}" class="param-check" />
+            <span>{{ p }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary btn-lg" id="searchBtn">
+      <svg viewBox="0 0 24 24" width="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Find Water-Quality Records
+    </button>
+
+  </form>
+</div><!-- /search-card -->
+
+<!-- ── How it works ───────────────────────────────────── -->
+<div class="how-it-works">
+  <h3>How It Works</h3>
+  <div class="how-grid">
+    <div class="how-step">
+      <div class="how-icon">1</div>
+      <p>Select your <strong>district</strong> and <strong>station</strong></p>
+    </div>
+    <div class="how-arrow">→</div>
+    <div class="how-step">
+      <div class="how-icon">2</div>
+      <p>Choose a <strong>date period</strong> and parameters</p>
+    </div>
+    <div class="how-arrow">→</div>
+    <div class="how-step">
+      <div class="how-icon">3</div>
+      <p>View <strong>real records</strong> with source evidence</p>
+    </div>
+    <div class="how-arrow">→</div>
+    <div class="how-step">
+      <div class="how-icon">4</div>
+      <p><strong>Approve</strong> report before publication</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

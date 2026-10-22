@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Environmental Officer Dashboard — Ward Water Quality Reporter{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Role Header -->
+  <div class="role-hero officer-theme">
+    <div class="role-hero-content">
+      <div class="role-pill">🛡️ Regulatory Oversight</div>
+      <h1>Environmental Officer Dashboard</h1>
+      <p class="role-subtitle">
+        Welcome, <strong>{{ current_user.full_name }}</strong> ({{ current_user.department }}).
+        Review, audit, and authorize groundwater quality reports before public release.
+      </p>
+    </div>
+    <div class="role-hero-badge">
+      <span class="officer-shield">⚖️</span>
+      <span class="officer-id">OFFICER #{{ current_user.username | upper }}</span>
+    </div>
+  </div>
+
+  <!-- KPI Metric Cards -->
+  <div class="metric-row">
+    <div class="metric-card metric-amber">
+      <span class="metric-value">{{ stats.drafts }}</span>
+      <span class="metric-label">Pending Draft Reviews</span>
+    </div>
+    <div class="metric-card metric-green">
+      <span class="metric-value">{{ stats.approved }}</span>
+      <span class="metric-label">Approved &amp; Published</span>
+    </div>
+    <div class="metric-card metric-red">
+      <span class="metric-value">{{ stats.rejected }}</span>
+      <span class="metric-label">Rejected / Need Revision</span>
+    </div>
+    <div class="metric-card metric-blue">
+      <span class="metric-value">{{ stats.total }}</span>
+      <span class="metric-label">Total Audited Reports</span>
+    </div>
+  </div>
+
+  <!-- Action Required: Pending Draft Reports -->
+  <div class="card" style="margin-bottom:1.75rem;">
+    <div class="card-header" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <svg viewBox="0 0 24 24" width="20"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <h2>Action Required: Draft Reports Awaiting Review</h2>
+      </div>
+      <span class="badge badge-warn" style="font-size:0.78rem;">{{ pending_reports | length }} Pending</span>
+    </div>
+
+    {% if pending_reports %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Report ID</th>
+            <th>District</th>
+            <th>Station</th>
+            <th>Ward Query</th>
+            <th>Generated Time</th>
+            <th>Review Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in pending_reports %}
+            <tr>
+              <td><code>{{ r.report_id }}</code></td>
+              <td><strong>{{ r.district }}</strong></td>
+              <td>{{ r.station }}</td>
+              <td>
+                {% if r.ward_input %}
+                  <span class="badge badge-unverified">Unverified: {{ r.ward_input }}</span>
+                {% else %}
+                  <span class="badge badge-grey">None</span>
+                {% endif %}
+              </td>
+              <td>{{ r.generated_at }}</td>
+              <td>
+                <a href="{{ url_for('load_report', report_id=r.report_id) }}" class="btn btn-sm btn-primary">
+                  👁️ Review &amp; Sign Off
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty-state-box">
+        <span class="empty-icon">✅</span>
+        <h3>All Clear: No Pending Drafts</h3>
+        <p>No draft reports are currently awaiting regulatory approval. Generate a new report via the search tool below.</p>
+        <a href="{{ url_for('search_explorer') }}" class="btn btn-primary" style="margin-top:0.75rem;">
+          🔍 Open Water Quality Search
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick Search & Investigation Tool -->
+  <div class="card" style="margin-bottom:1.75rem;">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" width="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h2>Launch Regulatory Groundwater Investigation</h2>
+    </div>
+    <div class="card-body" style="padding:1.5rem;">
+      <p style="color:var(--grey-600);margin-bottom:1.25rem;">
+        Search official CGWB monitoring wells across Tamil Nadu districts to inspect chemical parameters, historical sampling dates, and verify ward coverage.
+      </p>
+      <a href="{{ url_for('search_explorer') }}" class="btn btn-green" style="display:inline-flex;align-items:center;gap:0.5rem;">
+        <svg viewBox="0 0 24 24" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Start District Water Investigation
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Approval History -->
+  <div class="card">
+    <div class="card-header" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <svg viewBox="0 0 24 24" width="20"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <h2>Recent Audit Decisions Log</h2>
+      </div>
+      <a href="{{ url_for('history') }}" class="link-sm">View Full History →</a>
+    </div>
+    {% if recent_decisions %}
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Report ID</th>
+            <th>District / Station</th>
+            <th>Decision</th>
+            <th>Audited By</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in recent_decisions %}
+            <tr>
+              <td><code>{{ d.report_id }}</code></td>
+              <td>{{ d.district }} — {{ d.station }}</td>
+              <td>
+                {% if d.approval_status == 'APPROVED' %}
+                  <span class="badge badge-success">✅ APPROVED</span>
+                {% elif d.approval_status == 'REJECTED' %}
+                  <span class="badge badge-danger">❌ REJECTED</span>
+                {% else %}
+                  <span class="badge badge-warn">⏳ DRAFT</span>
+                {% endif %}
+              </td>
+              <td>{{ d.approved_by or 'System' }}</td>
+              <td>{{ d.approved_at or d.generated_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="empty-msg">No audit decisions recorded yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
