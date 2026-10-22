@@ -1,0 +1,26 @@
+# Ward Water Quality Reporter
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Outputs (keep folder, ignore generated files)
+outputs/*.db
+outputs/*.csv
+outputs/*.pdf
+
+# Data files (large)
+data/*.csv
+
+# Streamlit cache
+.streamlit/
+
+# Temp
+*.tmp
+*.bak
