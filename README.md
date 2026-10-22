@@ -32,12 +32,15 @@ report is published.
 
 | Tool | Purpose |
 |------|---------|
-| Python 3.11+ | All application logic |
-| Streamlit | Web dashboard interface |
-| Pandas | CSV loading and data processing |
+| Python 3.11+ | Application core logic & data science |
+| Flask 3.0+ | Modern web framework & REST endpoints |
+| Docker & Docker Compose | Containerization & production deployment |
+| Gunicorn | Production WSGI HTTP server |
+| Pandas | CSV loading and high-performance data processing |
 | SQLite | Storing report approval history |
-| Pytest | Automated test suite |
-| Plotly (optional) | Charts from real data only |
+| Pytest | Automated test suite (75 passed tests) |
+| Plotly & Chart.js | Visual charts and water parameter trends |
+| FPDF2 | Automated PDF report export |
 
 ---
 
@@ -45,13 +48,16 @@ report is published.
 
 ```
 Water_Predict/
-├── app.py                  ← Streamlit app entry point
+├── app.py                  ← Flask web application entry point
+├── Dockerfile              ← Production Docker container specification
+├── docker-compose.yml      ← Container orchestration & volume mapping
+├── .dockerignore           ← Container build exclusions
 ├── requirements.txt        ← Python package list
-├── README.md               ← This file
+├── README.md               ← Documentation & guide
 ├── .gitignore
 │
 ├── data/
-│   └── tamil_nadu_groundwater_quality_cleaned.csv  ← PUT YOUR CSV HERE
+│   └── tamil_nadu_groundwater_quality_cleaned.csv  ← Official CGWB dataset
 │
 ├── src/
 │   ├── __init__.py
@@ -62,8 +68,20 @@ Water_Predict/
 │   ├── normalization.py     ← Convert mg/L ↔ µg/L
 │   ├── source_verification.py ← Track provenance of every result
 │   ├── analysis.py          ← Main search pipeline
-│   ├── report_generator.py  ← Build draft reports
+│   ├── report_generator.py  ← Build draft reports & PDF generator
 │   └── approval.py          ← SQLite-backed approval workflow
+│
+├── static/
+│   ├── css/style.css        ← Modern responsive styling & design tokens
+│   ├── js/app.js            ← Dynamic frontend filters, charts & search logic
+│   └── img/                 ← Static images & assets
+│
+├── templates/
+│   ├── base.html            ← Base layout with navigation and footer
+│   ├── index.html           ← Search & live water quality exploration dashboard
+│   ├── report.html          ← Draft report view & approval flow
+│   ├── approvals.html       ← Approved report history & audit trail
+│   └── about.html           ← Methodology, CGWB sources & honest limitations
 │
 ├── tests/
 │   ├── __init__.py
@@ -78,7 +96,7 @@ Water_Predict/
 
 ---
 
-## ⚙️ How to Install Dependencies
+## ⚙️ How to Install Dependencies Locally
 
 Open a terminal in the project folder and run:
 
@@ -90,11 +108,32 @@ pip install -r requirements.txt
 
 ## ▶️ How to Start the Application
 
+### Option A: Local Python Run
+
 ```powershell
-streamlit run app.py
+python app.py
 ```
 
-Then open your browser at: **http://localhost:8501**
+Then open your browser at: **http://localhost:5000**
+
+---
+
+### Option B: Docker Run (Production Container)
+
+Make sure Docker Desktop is running, then execute:
+
+```powershell
+docker compose up --build
+```
+
+Or using standard Docker CLI:
+
+```powershell
+docker build -t ward-water-reporter .
+docker run -p 5000:5000 ward-water-reporter
+```
+
+Then open your browser at: **http://localhost:5000**
 
 > ⚠️ **You must place the CSV file first!**
 > Copy your file to: `data/tamil_nadu_groundwater_quality_cleaned.csv`
@@ -207,7 +246,7 @@ Search district → select station → enter ward (optional) → choose date per
 → reviewer approves → download CSV.
 
 ### 4. System Architecture
-CSV → Pandas → DatasetProfile → Search Pipeline → Streamlit UI → SQLite Approval DB
+CSV → Pandas → DatasetProfile → Search Pipeline → Flask Application & Responsive UI → SQLite Approval DB
 
 ### 5. Dataset and Limitations
 CGWB Tamil Nadu groundwater chemistry dataset. No ward mapping. Groundwater only.
@@ -237,4 +276,5 @@ Not certified drinking-water results.
 
 *Built with honesty and transparency for the public good. 💧*
 #   W a t e r _ P r e d i c t  
+ #   W a t e r _ P r e d i c t  
  
