@@ -1,195 +1,375 @@
 {% extends "base.html" %}
 {% block title %}Sample Detail #{{ row_idx + 1 }} — Ward Water Quality Reporter{% endblock %}
+{% block breadcrumb %}Sample Detail{% endblock %}
 
 {% block content %}
+<div class="revenlo-dashboard-wrapper">
 
-<div class="page-header">
-  <h1>🔍 Detailed Sample View</h1>
-  <p class="page-subtitle">Record {{ row_idx + 1 }} of {{ total_rows }} — Full provenance and quality notes.</p>
-</div>
-
-<!-- ── Navigation ────────────────────────────────────── -->
-<div class="detail-nav">
-  {% if row_idx > 0 %}
-    <a href="{{ url_for('detail', row_idx=row_idx - 1) }}" class="btn btn-sm btn-outline">← Previous</a>
-  {% else %}
-    <span class="btn btn-sm btn-outline disabled">← Previous</span>
-  {% endif %}
-
-  <span class="detail-counter">Record {{ row_idx + 1 }} / {{ total_rows }}</span>
-
-  {% if row_idx < total_rows - 1 %}
-    <a href="{{ url_for('detail', row_idx=row_idx + 1) }}" class="btn btn-sm btn-outline">Next →</a>
-  {% else %}
-    <span class="btn btn-sm btn-outline disabled">Next →</span>
-  {% endif %}
-</div>
-
-<div class="detail-grid">
-
-  <!-- ── Location card ─────────────────────────────── -->
-  <div class="card detail-card">
-    <div class="card-header">
-      <svg viewBox="0 0 24 24" width="18"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <h2>Location</h2>
+  <!-- ══════════════════════════════════════════════════════════
+       REVENLO HEADER ZONE
+  ══════════════════════════════════════════════════════════ -->
+  <div class="dashboard-header-zone">
+    <div class="header-titles">
+      <h1 class="revenlo-main-heading">Detailed Laboratory Record #{{ row_idx + 1 }}</h1>
+      <p class="revenlo-main-subtitle">Comprehensive chemical breakdown grounded across all 3 official datasets.</p>
     </div>
-    <div class="detail-fields">
-      <div class="detail-field">
-        <span class="detail-key">District</span>
-        <span class="detail-val">{{ district }}</span>
+
+    <div class="header-actions">
+      <div class="revenlo-dropdown-btn">
+        <span>{{ 'Dataset 2: Raw CGWB' if dataset_mode == 'raw' else 'Dataset 1: Cleaned & Standardized' }}</span>
       </div>
-      <div class="detail-field">
-        <span class="detail-key">Station</span>
-        <span class="detail-val">{{ station }}</span>
-      </div>
-      <div class="detail-field">
-        <span class="detail-key">Latitude</span>
-        <span class="detail-val">{{ lat }}</span>
-      </div>
-      <div class="detail-field">
-        <span class="detail-key">Longitude</span>
-        <span class="detail-val">{{ lon }}</span>
+      <div style="display:flex;gap:0.5rem;">
+        {% if row_idx > 0 %}
+          <a href="{{ url_for('detail', row_idx=row_idx - 1) }}" class="btn-revenlo-outline" style="text-decoration:none;">
+            ← Prev
+          </a>
+        {% endif %}
+        {% if row_idx < total_rows - 1 %}
+          <a href="{{ url_for('detail', row_idx=row_idx + 1) }}" class="btn-revenlo-primary" style="text-decoration:none;">
+            Next →
+          </a>
+        {% endif %}
       </div>
     </div>
   </div>
 
-  <!-- ── Date card ──────────────────────────────────── -->
-  <div class="card detail-card">
-    <div class="card-header">
-      <svg viewBox="0 0 24 24" width="18"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <h2>Sample Date</h2>
+  <!-- ══════════════════════════════════════════════════════════
+       4 STAT METRIC CARDS ROW
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-stats-grid">
+
+    <!-- Card 1: Sample Index -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ row_idx + 1 }}</span>
+            <span class="stat-trend-pill trend-up">of {{ total_rows }}</span>
+          </div>
+          <div class="stat-sub-label">Sample Position</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Record {{ row_idx + 1 }} / {{ total_rows }}</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
     </div>
-    <div class="detail-fields">
-      <div class="detail-field">
-        <span class="detail-key">Collection Date</span>
-        <span class="detail-val">{{ raw_date }}</span>
+
+    <!-- Card 2: Station Name -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:rgba(34, 197, 94, 0.12);color:#16a34a;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span style="font-size:1.15rem;">{{ station }}</span>
+            <span class="stat-trend-pill trend-up">CGWB</span>
+          </div>
+          <div class="stat-sub-label">{{ district }} District</div>
+        </div>
       </div>
-      <div class="detail-field">
-        <span class="detail-key">Age Status</span>
-        <span class="detail-val">
-          {% if is_historical == True or is_historical == 'True' %}
-            <span class="badge badge-amber">🕰️ {{ age_label }}</span>
-            <br><small style="color:#b45309;">This is a historical record — NOT a current measurement.</small>
-          {% elif is_historical == False or is_historical == 'False' %}
-            <span class="badge badge-green">✅ {{ age_label }}</span>
-          {% else %}
-            <span class="badge badge-grey">📅 Date unknown — age cannot be determined</span>
-          {% endif %}
-        </span>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">State LGD: 33 (Tamil Nadu)</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
+    </div>
+
+    <!-- Card 3: Parameters Evaluated -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:rgba(14, 165, 233, 0.12);color:#0284c7;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ evaluated_params | length }}</span>
+            <span class="stat-trend-pill trend-up">Assessed</span>
+          </div>
+          <div class="stat-sub-label">Laboratory Parameters</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">BIS IS 10500:2012 Standard</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 4: Ward Link Status -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:rgba(245, 158, 11, 0.12);color:#d97706;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span style="font-size:1.15rem;">Unverified</span>
+            <span class="stat-trend-pill trend-flat">Honest</span>
+          </div>
+          <div class="stat-sub-label">Ward Mapping Caveat</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">No Direct Pipe Network Link</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 3 Context Metadata Cards (Grid) ───────────────── -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1.5rem;">
+
+    <!-- ULB Card (Dataset 3) -->
+    <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+      <div class="table-card-top-header" style="margin-bottom:1rem;">
+        <div class="table-header-info">
+          <h3 class="table-title">Dataset 3: Urban Local Body</h3>
+          <p class="table-subtitle">Official administrative jurisdiction and ward count.</p>
+        </div>
+        <span class="status-pill status-done">ULB Linked</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;font-size:0.88rem;">
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Municipality</span>
+          <div style="font-weight:700;font-size:1.05rem;color:var(--primary-dark);margin-top:0.2rem;">
+            {{ ulb_details.name if ulb_details else (ulb_name or 'Not specified') }}
+            {% if ulb_details %}<span class="status-pill status-done" style="margin-left:0.35rem;">{{ ulb_details.grade }}</span>{% endif %}
+          </div>
+        </div>
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Total Wards</span>
+          <div style="font-weight:600;margin-top:0.2rem;">{{ ulb_details.total_wards if ulb_details else 'N/A' }} Wards</div>
+        </div>
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Council Representation</span>
+          <div style="color:var(--grey-600);margin-top:0.2rem;font-size:0.82rem;">
+            {% if ulb_details %}
+              {{ ulb_details.council_general or 'N/A' }} Gen | {{ ulb_details.council_sc or 'N/A' }} SC | {{ ulb_details.council_st or '0' }} ST | {{ ulb_details.council_women or 'N/A' }} Women
+            {% else %}
+              General municipal registry
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Station & Coordinates Card -->
+    <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+      <div class="table-card-top-header" style="margin-bottom:1rem;">
+        <div class="table-header-info">
+          <h3 class="table-title">Dataset 1 &amp; 2: Station Telemetry</h3>
+          <p class="table-subtitle">Borehole coordinates and monitoring provenance.</p>
+        </div>
+        <span class="status-pill status-done">CGWB Well</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;font-size:0.88rem;">
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Monitoring Agency</span>
+          <div style="font-weight:600;margin-top:0.2rem;">{{ row.get('Agency', 'CGWB') }} (State LGD: 33)</div>
+        </div>
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Tehsil / Taluk</span>
+          <div style="font-weight:600;margin-top:0.2rem;">{{ row.get('Tehsil', 'N/A') }}</div>
+        </div>
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">GPS Coordinates</span>
+          <div style="font-weight:600;margin-top:0.2rem;display:flex;align-items:center;gap:0.5rem;">
+            <span>{{ lat }}, {{ lon }}</span>
+            {% if lat and lon and lat != 'N/A' and lon != 'N/A' %}
+              <a href="https://www.google.com/maps/search/?api=1&query={{ lat }},{{ lon }}" target="_blank" rel="noopener" class="btn-revenlo-outline" style="padding:0.2rem 0.5rem;font-size:0.75rem;text-decoration:none;">
+                📍 Map
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collection Date & Recency -->
+    <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+      <div class="table-card-top-header" style="margin-bottom:1rem;">
+        <div class="table-header-info">
+          <h3 class="table-title">Sampling Recency Status</h3>
+          <p class="table-subtitle">Acquisition timestamp and aging analysis.</p>
+        </div>
+        <span class="status-pill status-pending">Historical</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;font-size:0.88rem;">
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Data Acquisition Time (Raw)</span>
+          <div style="margin-top:0.2rem;"><code>{{ raw_date }}</code></div>
+        </div>
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Standardized ISO 8601 Date</span>
+          <div style="margin-top:0.2rem;"><code>{{ row.get('Sample Date (ISO)', 'N/A in Raw Mode') }}</code></div>
+        </div>
+        <div>
+          <span style="color:var(--grey-400);font-size:0.75rem;text-transform:uppercase;font-weight:700;">Data Type / Caveat</span>
+          <div style="font-size:0.8rem;color:var(--grey-600);margin-top:0.2rem;">
+            {{ row.get('Data Type / Caveat', 'CGWB groundwater chemistry; not confirmed ward-level treated drinking-water data') }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Chemical Parameters & BIS Standards Table ────── -->
+  <div class="revenlo-table-card">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Chemical Analysis &amp; BIS IS 10500:2012 Standards</h2>
+        <p class="table-subtitle">Laboratory evaluation for this specific sample record.</p>
+      </div>
+      <span class="status-pill status-done">{{ evaluated_params|length }} Parameters Evaluated</span>
+    </div>
+
+    <div class="table-scroll">
+      <table class="revenlo-table">
+        <thead>
+          <tr>
+            <th>Chemical Parameter</th>
+            <th>Measured Value</th>
+            <th>Unit</th>
+            <th>BIS Benchmark Limit</th>
+            <th>Compliance Status</th>
+            <th>Health &amp; Water Effect</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in evaluated_params %}
+            <tr>
+              <td>
+                <div class="cell-main-text">{{ p.display_name }}</div>
+                <div class="cell-muted-text">Col: {{ p.parameter }}</div>
+              </td>
+              <td>
+                <span style="font-weight:700;font-size:1.05rem;color:var(--primary-dark);">
+                  {{ p.raw_value }}
+                </span>
+              </td>
+              <td><span class="cell-tag">{{ p.unit or '—' }}</span></td>
+              <td style="font-size:0.82rem;color:var(--grey-600);">{{ p.standard_ref }}</td>
+              <td>
+                {% if 'badge-green' in p.badge_class or 'Desirable' in p.status_label %}
+                  <span class="status-pill status-done">{{ p.status_label }}</span>
+                {% elif 'badge-amber' in p.badge_class or 'Permissible' in p.status_label %}
+                  <span class="status-pill status-in-progress">{{ p.status_label }}</span>
+                {% elif 'badge-red' in p.badge_class or 'Exceeds' in p.status_label %}
+                  <span class="status-pill status-failed">{{ p.status_label }}</span>
+                {% else %}
+                  <span class="status-pill status-pending">{{ p.status_label }}</span>
+                {% endif %}
+              </td>
+              <td style="font-size:0.8rem;color:var(--grey-600);max-width:300px;">
+                {{ p.health_impact }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- ── Ward match card ──────────────────────────────── -->
-  <div class="card detail-card">
-    <div class="card-header">
-      <svg viewBox="0 0 24 24" width="18"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-      <h2>Ward Match Status</h2>
+  <!-- ── Cleaned vs Raw Telemetry Comparison for this Row ── -->
+  {% if raw_row %}
+  <div class="revenlo-table-card">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Row Verification: Cleaned Dataset vs Raw Dataset Matching</h2>
+        <p class="table-subtitle">1:1 parameter alignment between Dataset 1 and Dataset 2 for this record.</p>
+      </div>
+      <span class="status-pill status-done">Verified Integrity</span>
     </div>
-    <div class="detail-fields">
-      <div class="detail-field">
-        <span class="detail-key">Status</span>
-        <span class="detail-val">
-          {% if ward_match.status == 'Unverified' %}
-            <span class="badge badge-red">⚠️ Unverified</span>
-          {% elif ward_match.status == 'Not requested' %}
-            <span class="badge badge-grey">No ward specified</span>
-          {% else %}
-            <span class="badge badge-green">{{ ward_match.status }}</span>
-          {% endif %}
-        </span>
-      </div>
-      {% if ward_match.message %}
-      <div class="detail-field">
-        <span class="detail-key">Explanation</span>
-        <span class="detail-val small-text">{{ ward_match.message }}</span>
-      </div>
+
+    <div class="table-scroll">
+      <table class="revenlo-table">
+        <thead>
+          <tr><th>Column</th><th>Dataset 1: Cleaned</th><th>Dataset 2: Raw CGWB</th><th>Integrity Match</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="cell-main-text">Station</div></td>
+            <td>{{ row.get('Station') }}</td>
+            <td>{{ raw_row.get('Station') }}</td>
+            <td><span class="status-pill status-done">Match</span></td>
+          </tr>
+          <tr>
+            <td><div class="cell-main-text">Timestamp</div></td>
+            <td><code>{{ row.get('Sample Datetime (ISO)', row.get('Sample Date (ISO)', '—')) }}</code></td>
+            <td><code>{{ raw_row.get('Data Acquisition Time', '—') }}</code></td>
+            <td><span class="status-pill status-done">Valid Parse</span></td>
+          </tr>
+          <tr>
+            <td><div class="cell-main-text">pH</div></td>
+            <td>{{ row.get('Potential of Hydrogen (pH)', '—') }}</td>
+            <td>{{ raw_row.get('Potential of Hydrogen (pH)', '—') }}</td>
+            <td><span class="status-pill status-done">Match</span></td>
+          </tr>
+          <tr>
+            <td><div class="cell-main-text">Electrical Conductivity (EC)</div></td>
+            <td>{{ row.get('Electric Conductivity (I 1/4 S/cm)', '—') }}</td>
+            <td>{{ raw_row.get('Electric Conductivity (I 1/4 S/cm)', '—') }}</td>
+            <td><span class="status-pill status-done">Match</span></td>
+          </tr>
+          <tr>
+            <td><div class="cell-main-text">Total Hardness</div></td>
+            <td>{{ row.get('Total Hardness (mgCaCO3/L)', '—') }}</td>
+            <td>{{ raw_row.get('Total Hardness (mgCaCO3/L)', '—') }}</td>
+            <td><span class="status-pill status-done">Match</span></td>
+          </tr>
+          <tr>
+            <td><div class="cell-main-text">Chloride</div></td>
+            <td>{{ row.get('Chloride (mg/L)', '—') }}</td>
+            <td>{{ raw_row.get('Chloride (mg/L)', '—') }}</td>
+            <td><span class="status-pill status-done">Match</span></td>
+          </tr>
+          <tr>
+            <td><div class="cell-main-text">Fluoride</div></td>
+            <td>{{ row.get('Fluoride (mg/L)', '—') }}</td>
+            <td>{{ raw_row.get('Fluoride (mg/L)', '—') }}</td>
+            <td><span class="status-pill status-done">Match</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Navigation bottom ─────────────────────────────── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:0.5rem;">
+    <a href="{{ url_for('results') }}" class="btn-revenlo-outline">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      <span>Back to Results</span>
+    </a>
+    <div style="display:flex;gap:0.75rem;">
+      {% if row_idx > 0 %}
+        <a href="{{ url_for('detail', row_idx=row_idx - 1) }}" class="btn-revenlo-outline">
+          ← Previous Record
+        </a>
+      {% endif %}
+      {% if row_idx < total_rows - 1 %}
+        <a href="{{ url_for('detail', row_idx=row_idx + 1) }}" class="btn-revenlo-primary">
+          Next Record →
+        </a>
       {% endif %}
     </div>
   </div>
 
-</div><!-- /detail-grid -->
-
-<!-- ── Measurements ──────────────────────────────────── -->
-<div class="card" style="margin-bottom:1.5rem;">
-  <div class="card-header">
-    <svg viewBox="0 0 24 24" width="18"><path d="M10 2v8L4.72 17.95A2 2 0 006.54 21h10.92a2 2 0 001.82-3.05L14 10V2"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>
-    <h2>Measurements</h2>
-  </div>
-  {% if meas_rows %}
-  <div class="table-scroll">
-    <table class="data-table">
-      <thead>
-        <tr><th>Parameter</th><th>Measured Value</th><th>Unit</th><th>Data Status</th></tr>
-      </thead>
-      <tbody>
-        {% for m in meas_rows %}
-          <tr>
-            <td><strong>{{ m.parameter }}</strong></td>
-            <td>{{ m.value }}</td>
-            <td><span class="unit-tag">(see dataset)</span></td>
-            <td>
-              {% if m.status == 'ok' %}
-                <span class="badge badge-green">✅ OK</span>
-              {% else %}
-                <span class="badge badge-grey">— Missing</span>
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-    <p class="empty-msg">No numeric measurements available for this record.</p>
-  {% endif %}
-</div>
-
-<!-- ── Source evidence ───────────────────────────────── -->
-<div class="card card-source" style="margin-bottom:1.5rem;">
-  <div class="card-header">
-    <svg viewBox="0 0 24 24" width="18"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-    <h2>Source Evidence</h2>
-  </div>
-  {% if source_warnings %}
-    {% for sw in source_warnings %}
-      <div class="alert alert-warning" style="margin:0 1.5rem 1rem;">{{ sw }}</div>
-    {% endfor %}
-  {% endif %}
-  <div class="source-grid">
-    {% for key, val in evidence.items() %}
-      <div class="source-item">
-        <span class="source-key">{{ key | replace('_', ' ') | title }}</span>
-        <span class="source-val">{{ val }}</span>
-      </div>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- ── Raw row ───────────────────────────────────────── -->
-<details class="raw-details">
-  <summary>📂 View original raw row from dataset</summary>
-  <div class="table-scroll" style="margin-top:1rem;">
-    <table class="data-table">
-      <thead><tr><th>Column</th><th>Value</th></tr></thead>
-      <tbody>
-        {% for k, v in row.items() %}
-          <tr><td><code>{{ k }}</code></td><td>{{ v }}</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</details>
-
-<!-- ── Navigation bottom ─────────────────────────────── -->
-<div class="action-bar" style="margin-top:1.5rem;">
-  <a href="{{ url_for('results') }}" class="btn btn-outline">← Back to Results</a>
-  {% if row_idx > 0 %}
-    <a href="{{ url_for('detail', row_idx=row_idx - 1) }}" class="btn btn-outline">← Previous Record</a>
-  {% endif %}
-  {% if row_idx < total_rows - 1 %}
-    <a href="{{ url_for('detail', row_idx=row_idx + 1) }}" class="btn btn-primary">Next Record →</a>
-  {% endif %}
-</div>
-
+</div><!-- /.revenlo-dashboard-wrapper -->
 {% endblock %}

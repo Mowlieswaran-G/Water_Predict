@@ -1,197 +1,260 @@
 {% extends "base.html" %}
-{% block title %}Sign In — Ward Water Quality Reporter{% endblock %}
+{% block title %}Authentication — Ward Water Quality Reporter{% endblock %}
 
 {% block content %}
-<div class="auth-wrapper">
+<div class="split-auth-layout">
 
-  <div class="auth-card">
-    <!-- Header -->
-    <div class="auth-header">
-      <div class="auth-badge-icon">💧</div>
-      <h1>Water Quality Portal</h1>
-      <p class="auth-subtitle">Sign in to access your designated role dashboard and records.</p>
-    </div>
+  <!-- ══════════════════════════════════════════════════════════
+       LEFT SIDE: FULL-BLEED COSMIC WATER VISUAL (FITS THE PAGE)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="auth-visual-side" style="background-image: url('{{ url_for('static', filename='img/login_showcase.jpg') }}');" role="img" aria-label="Groundwater Telemetry Visual">
+    <div class="visual-gradient-edge"></div>
+  </div>
 
-    <!-- Quick Demo Logins Bar -->
-    <div class="demo-account-bar">
-      <div class="demo-bar-title">
-        <span>⚡ Quick One-Click Demo Accounts</span>
+  <!-- ══════════════════════════════════════════════════════════
+       RIGHT SIDE: MATCHING DARK THEME AUTHENTICATION FORM
+  ══════════════════════════════════════════════════════════ -->
+  <div class="auth-form-side">
+    <div class="auth-form-container">
+
+      <!-- Brand Header -->
+      <div class="auth-brand">
+        <div class="brand-icon-box">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+          </svg>
+        </div>
+        <span class="brand-title">WardWater</span>
       </div>
-      <div class="demo-chips">
-        {% for u in demo_users %}
-          <button type="button" class="demo-chip"
-                  onclick="fillDemo('{{ u.username }}', '{{ u.password }}')"
-                  title="Log in as {{ u.full_name }} ({{ u.role }})">
-            <span class="chip-avatar">{{ u.full_name[0] | upper }}</span>
-            <div class="chip-info">
-              <span class="chip-name">{{ u.full_name }}</span>
-              <span class="chip-role">{{ u.role }}</span>
+
+      <!-- Segmented Two-Option Switch (Login vs Create User) -->
+      <div class="auth-tabs-segmented" role="tablist">
+        <button type="button" class="auth-tab-btn {% if active_tab != 'register' %}active{% endif %}"
+                id="tabBtnLogin" onclick="switchAuthTab('login')" role="tab" aria-selected="{% if active_tab != 'register' %}true{% else %}false{% endif %}">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Login</span>
+        </button>
+        <button type="button" class="auth-tab-btn {% if active_tab == 'register' %}active{% endif %}"
+                id="tabBtnRegister" onclick="switchAuthTab('register')" role="tab" aria-selected="{% if active_tab == 'register' %}true{% else %}false{% endif %}">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/>
+            <line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+          <span>Create User</span>
+        </button>
+      </div>
+
+      <!-- Heading -->
+      <div class="auth-heading-group">
+        <h1 class="auth-title" id="formHeading">
+          {% if active_tab == 'register' %}Create account{% else %}Login{% endif %}
+        </h1>
+        <p class="auth-desc" id="formSubtitle">
+          {% if active_tab == 'register' %}
+            Register with your designated role to access official water quality dashboards.
+          {% else %}
+            Welcome back! Please login to your account.
+          {% endif %}
+        </p>
+      </div>
+
+      <!-- ── OPTION 1: LOGIN FORM ──── -->
+      <div id="loginFormSection" style="display: {% if active_tab == 'register' %}none{% else %}block{% endif %};">
+        <form action="{{ url_for('login') }}" method="POST" class="arcana-form" id="loginForm">
+          <input type="hidden" name="action" value="login" />
+          <input type="hidden" name="next" value="{{ next_url }}" />
+
+          <div class="form-field-group">
+            <label class="field-label" for="username">Email or Username</label>
+            <div class="field-input-box">
+              <svg class="field-icon" viewBox="0 0 24 24" width="18" height="18">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input type="text" name="username" id="username" class="clean-input"
+                     placeholder="Enter your email or username" required autofocus autocomplete="username" />
             </div>
+          </div>
+
+          <div class="form-field-group">
+            <label class="field-label" for="password">Password</label>
+            <div class="field-input-box">
+              <svg class="field-icon" viewBox="0 0 24 24" width="18" height="18">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input type="password" name="password" id="password" class="clean-input"
+                     placeholder="••••••••••••••••" required autocomplete="current-password" />
+              <button type="button" class="btn-pwd-toggle" onclick="togglePasswordVisibility('password', this)" title="Show/Hide Password">
+                👁️
+              </button>
+            </div>
+          </div>
+
+          <div class="form-util-row">
+            <label class="checkbox-box">
+              <input type="checkbox" name="remember" checked />
+              <span>Remember Me</span>
+            </label>
+            <span style="font-size:0.82rem;color:#64748b;">Secure Authentication</span>
+          </div>
+
+          <button type="submit" class="btn-arcana-submit">
+            Login
           </button>
-        {% endfor %}
+        </form>
+
+        <div class="auth-toggle-row">
+          <span>Don't have an account ?</span>
+          <a href="javascript:void(0)" onclick="switchAuthTab('register')" class="auth-link">Sign up</a>
+        </div>
       </div>
-    </div>
 
-    <!-- Tabs: Sign In / Create Account -->
-    <div class="auth-tabs">
-      <button type="button" class="auth-tab-btn {% if active_tab != 'register' %}active{% endif %}" id="tabBtnLogin" onclick="switchTab('login')">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        Sign In
-      </button>
-      <button type="button" class="auth-tab-btn {% if active_tab == 'register' %}active{% endif %}" id="tabBtnRegister" onclick="switchTab('register')">
-        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-        Create Account
-      </button>
-    </div>
+      <!-- ── OPTION 2: CREATE USER FORM (Contains 4 Role Options) ──── -->
+      <div id="registerFormSection" style="display: {% if active_tab == 'register' %}block{% else %}none{% endif %};">
+        <form action="{{ url_for('login') }}" method="POST" class="arcana-form" id="registerForm">
+          <input type="hidden" name="action" value="register" />
+          <input type="hidden" name="next" value="{{ next_url }}" />
 
-    <!-- ── Tab 1: Login Form ──────────────────────────────── -->
-    <div id="loginFormContainer" style="display: {% if active_tab == 'register' %}none{% else %}block{% endif %};">
-      <form action="{{ url_for('login') }}" method="POST" class="auth-form" id="loginForm">
-        <input type="hidden" name="action" value="login" />
-        <input type="hidden" name="next" value="{{ next_url }}" />
+          <!-- ROLE SELECTOR CARDS -->
+          <div class="form-field-group role-selection-wrapper">
+            <label class="field-label">Select Account Role <span class="required">*</span></label>
+            <input type="hidden" name="reg_role" id="selectedRoleInput" value="Citizen" />
 
-        <div class="form-group">
-          <label class="form-label" for="username">
-            <svg viewBox="0 0 24 24" width="14" height="14"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Username
-          </label>
-          <input type="text" name="username" id="username" class="form-input"
-                 placeholder="e.g. officer, inspector, hydrologist, or citizen" required autofocus autocomplete="username" />
-        </div>
+            <div class="create-user-role-grid">
+              <!-- Card 1: Officer -->
+              <div class="role-picker-card" id="roleCardOfficer" onclick="selectRole('Officer')" title="Environmental Officer">
+                <div class="role-card-circle">⚖️</div>
+                <span class="role-card-title">Officer</span>
+              </div>
 
-        <div class="form-group">
-          <label class="form-label" for="password">
-            <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Password
-          </label>
-          <div class="input-password-wrapper">
-            <input type="password" name="password" id="password" class="form-input"
-                   placeholder="Enter your password" required autocomplete="current-password" />
-            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('password', this)" title="Show/Hide password">
-              👁️
-            </button>
+              <!-- Card 2: Inspector -->
+              <div class="role-picker-card" id="roleCardInspector" onclick="selectRole('Inspector')" title="Municipal Quality Inspector">
+                <div class="role-card-circle">🏛️</div>
+                <span class="role-card-title">Inspector</span>
+              </div>
+
+              <!-- Card 3: Hydrologist -->
+              <div class="role-picker-card" id="roleCardHydrologist" onclick="selectRole('Hydrologist')" title="Senior Hydrologist">
+                <div class="role-card-circle">🧪</div>
+                <span class="role-card-title">Hydrologist</span>
+              </div>
+
+              <!-- Card 4: Citizen -->
+              <div class="role-picker-card active" id="roleCardCitizen" onclick="selectRole('Citizen')" title="Public Citizen / Community Researcher">
+                <div class="role-card-circle">👥</div>
+                <span class="role-card-title">Citizen</span>
+              </div>
+            </div>
+            <span class="form-hint" id="roleDescHint" style="font-size:0.75rem;color:#38bdf8;margin-top:0.35rem;">
+              Role: <strong>Public Citizen / Researcher</strong> (Access public water queries &amp; reports)
+            </span>
           </div>
-        </div>
 
-        <div class="form-row-between">
-          <label class="checkbox-label">
-            <input type="checkbox" name="remember" checked />
-            <span>Keep me logged in</span>
-          </label>
-          <span class="demo-hint-text">Demo Pass: <code>water2026</code></span>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-block btn-auth-submit">
-          <span>Sign In to Dashboard</span>
-          <svg viewBox="0 0 24 24" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-      </form>
-    </div>
-
-    <!-- ── Tab 2: Register Form ───────────────────────────── -->
-    <div id="registerFormContainer" style="display: {% if active_tab == 'register' %}block{% else %}none{% endif %};">
-      <form action="{{ url_for('login') }}" method="POST" class="auth-form" id="registerForm">
-        <input type="hidden" name="action" value="register" />
-        <input type="hidden" name="next" value="{{ next_url }}" />
-
-        <div class="form-group">
-          <label class="form-label" for="reg_full_name">Full Name *</label>
-          <input type="text" name="reg_full_name" id="reg_full_name" class="form-input"
-                 placeholder="e.g. Dr. Rajesh Kannan" required />
-        </div>
-
-        <div class="form-row-2">
-          <div class="form-group">
-            <label class="form-label" for="reg_username">Username *</label>
-            <input type="text" name="reg_username" id="reg_username" class="form-input"
-                   placeholder="e.g. rajesh_k" required />
+          <div class="form-field-group">
+            <label class="field-label" for="reg_full_name">Full Name <span class="required">*</span></label>
+            <div class="field-input-box">
+              <svg class="field-icon" viewBox="0 0 24 24" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" name="reg_full_name" id="reg_full_name" class="clean-input"
+                     placeholder="e.g. Dr. Rajesh Kannan" required />
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="reg_email">Email</label>
-            <input type="email" name="reg_email" id="reg_email" class="form-input"
-                   placeholder="name@agency.gov.in" />
+
+          <div class="form-field-group">
+            <label class="field-label" for="reg_username">Username <span class="required">*</span></label>
+            <div class="field-input-box">
+              <svg class="field-icon" viewBox="0 0 24 24" width="18" height="18"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input type="text" name="reg_username" id="reg_username" class="clean-input"
+                     placeholder="Choose a username" required autocomplete="username" />
+            </div>
           </div>
-        </div>
 
-        <div class="form-group">
-          <label class="form-label" for="reg_role">Designation / Role *</label>
-          <select name="reg_role" id="reg_role" class="form-select" required>
-            {% for r in available_roles %}
-              <option value="{{ r }}">{{ r }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="reg_department">Department / Agency</label>
-          <input type="text" name="reg_department" id="reg_department" class="form-input"
-                 placeholder="e.g. State Groundwater Authority" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="reg_password">Create Password *</label>
-          <div class="input-password-wrapper">
-            <input type="password" name="reg_password" id="reg_password" class="form-input"
-                   placeholder="Minimum 4 characters" required />
-            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('reg_password', this)" title="Show/Hide password">
-              👁️
-            </button>
+          <div class="form-field-group">
+            <label class="field-label" for="reg_password">Password <span class="required">*</span></label>
+            <div class="field-input-box">
+              <svg class="field-icon" viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" name="reg_password" id="reg_password" class="clean-input"
+                     placeholder="At least 4 characters" required autocomplete="new-password" />
+              <button type="button" class="btn-pwd-toggle" onclick="togglePasswordVisibility('reg_password', this)" title="Show/Hide Password">
+                👁️
+              </button>
+            </div>
           </div>
+
+          <button type="submit" class="btn-arcana-submit">
+            Create User &amp; Sign In
+          </button>
+        </form>
+
+        <div class="auth-toggle-row">
+          <span>Already registered?</span>
+          <a href="javascript:void(0)" onclick="switchAuthTab('login')" class="auth-link">← Sign in with existing user</a>
         </div>
+      </div>
 
-        <button type="submit" class="btn btn-green btn-block btn-auth-submit">
-          <span>Create Account &amp; Access Dashboard</span>
-          <svg viewBox="0 0 24 24" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
-        </button>
-      </form>
     </div>
-
-    <!-- Security footnote -->
-    <div class="auth-footer-note">
-      <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-      <span>Central Ground Water Board (CGWB) • Tamil Nadu Groundwater Portal</span>
-    </div>
-
   </div>
 
 </div>
 
 <script>
-function switchTab(tab) {
-  const loginContainer = document.getElementById('loginFormContainer');
-  const regContainer = document.getElementById('registerFormContainer');
-  const tabBtnLogin = document.getElementById('tabBtnLogin');
-  const tabBtnRegister = document.getElementById('tabBtnRegister');
+const ROLE_DESCRIPTIONS = {
+  'Officer': 'Role: <strong>Environmental Officer</strong> (Authorize, review, and approve official water reports)',
+  'Inspector': 'Role: <strong>Municipal Quality Inspector</strong> (Perform ward inspections and flag contamination)',
+  'Hydrologist': 'Role: <strong>Senior Hydrologist</strong> (CGWB aquifer chemical telemetry & deep well monitoring)',
+  'Citizen': 'Role: <strong>Public Citizen / Researcher</strong> (Query open district water quality records)'
+};
 
-  if (tab === 'register') {
-    loginContainer.style.display = 'none';
-    regContainer.style.display = 'block';
-    tabBtnLogin.classList.remove('active');
-    tabBtnRegister.classList.add('active');
-  } else {
-    loginContainer.style.display = 'block';
-    regContainer.style.display = 'none';
-    tabBtnRegister.classList.remove('active');
-    tabBtnLogin.classList.add('active');
+function selectRole(roleKey) {
+  document.getElementById('selectedRoleInput').value = roleKey;
+  const cards = document.querySelectorAll('.role-picker-card');
+  cards.forEach(c => c.classList.remove('active'));
+  const activeCard = document.getElementById('roleCard' + roleKey);
+  if (activeCard) {
+    activeCard.classList.add('active');
+  }
+  const descEl = document.getElementById('roleDescHint');
+  if (descEl && ROLE_DESCRIPTIONS[roleKey]) {
+    descEl.innerHTML = ROLE_DESCRIPTIONS[roleKey];
   }
 }
 
-function fillDemo(username, password) {
-  switchTab('login');
-  const uInput = document.getElementById('username');
-  const pInput = document.getElementById('password');
-  uInput.value = username;
-  pInput.value = password;
-  uInput.focus();
-  uInput.style.borderColor = 'var(--blue-600, #1a6bbf)';
-  pInput.style.borderColor = 'var(--blue-600, #1a6bbf)';
+function switchAuthTab(tab) {
+  const loginSection = document.getElementById('loginFormSection');
+  const registerSection = document.getElementById('registerFormSection');
+  const tabLogin = document.getElementById('tabBtnLogin');
+  const tabRegister = document.getElementById('tabBtnRegister');
+  const heading = document.getElementById('formHeading');
+  const subtitle = document.getElementById('formSubtitle');
+
+  if (tab === 'register') {
+    loginSection.style.display = 'none';
+    registerSection.style.display = 'block';
+    tabLogin.classList.remove('active');
+    tabRegister.classList.add('active');
+    heading.textContent = 'Create account';
+    subtitle.textContent = 'Register with your designated role to access official water quality dashboards.';
+  } else {
+    registerSection.style.display = 'none';
+    loginSection.style.display = 'block';
+    tabRegister.classList.remove('active');
+    tabLogin.classList.add('active');
+    heading.textContent = 'Login';
+    subtitle.textContent = 'Welcome back! Please login to your account.';
+  }
 }
 
 function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
+  if (!input) return;
   if (input.type === 'password') {
     input.type = 'text';
-    btn.textContent = '🙈';
+    btn.textContent = '🔒';
   } else {
     input.type = 'password';
     btn.textContent = '👁️';

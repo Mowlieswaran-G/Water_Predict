@@ -59,6 +59,9 @@ def build_draft_report(
     total_found: int,
     period_found: int,
     parsed_date_col: str | None,
+    ulb_name: str | None = None,
+    ulb_details: dict | None = None,
+    dataset_mode: str = "cleaned",
 ) -> dict:
     """
     Assemble a draft report dictionary.
@@ -80,6 +83,17 @@ def build_draft_report(
     # Limitations
     limitations = _build_limitations(ward_match, period_empty, param_cols)
 
+    ulb_display = ulb_name or (ulb_details.get("name") if ulb_details else "Not specified")
+    grade_display = ulb_details.get("grade", "N/A") if ulb_details else "N/A"
+    wards_display = ulb_details.get("total_wards", "N/A") if ulb_details else "N/A"
+    council_display = (
+        f"General: {ulb_details.get('council_general', 'N/A')} | "
+        f"SC: {ulb_details.get('council_sc', 'N/A')} | "
+        f"ST: {ulb_details.get('council_st', '0/NA')} | "
+        f"Women: {ulb_details.get('council_women', 'N/A')}"
+        if ulb_details else "N/A"
+    )
+
     report = {
         # ── Identification ──────────────────────────────────────────────────
         "Report_ID":          report_id,
@@ -90,8 +104,13 @@ def build_draft_report(
         "State":              "Tamil Nadu",
         "District":           district,
         "Station":            station,
+        "Municipality_ULB":   ulb_display,
+        "ULB_Grade":          grade_display,
+        "ULB_Total_Wards":    wards_display,
+        "Council_Composition": council_display,
         "Ward_Input":         ward_input or "Not specified",
         "Period_Requested":   period,
+        "Dataset_Source":     "Cleaned & Standardized (ISO Timestamps & Audit)" if dataset_mode == "cleaned" else "Raw CGWB Telemetry",
 
         # ── Record counts ────────────────────────────────────────────────────
         "Total_Records_Found":  total_found,

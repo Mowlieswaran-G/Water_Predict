@@ -1,5 +1,61 @@
 /* app.js — Ward Water Quality Reporter */
 
+// ── Theme mode toggle (Dark / Light) ────────────────────────
+function setTheme(theme) {
+  const darkBtn = document.getElementById('themeDarkBtn');
+  const lightBtn = document.getElementById('themeLightBtn');
+
+  if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    if (document.body) document.body.setAttribute('data-theme', 'dark');
+    localStorage.setItem('theme', 'dark');
+    if (darkBtn) darkBtn.classList.add('active');
+    if (lightBtn) lightBtn.classList.remove('active');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    if (document.body) document.body.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'light');
+    if (lightBtn) lightBtn.classList.add('active');
+    if (darkBtn) darkBtn.classList.remove('active');
+  }
+}
+
+function initTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+                 localStorage.getItem('theme') === 'dark';
+  const darkBtn = document.getElementById('themeDarkBtn');
+  const lightBtn = document.getElementById('themeLightBtn');
+
+  if (isDark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    if (darkBtn) darkBtn.classList.add('active');
+    if (lightBtn) lightBtn.classList.remove('active');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    if (lightBtn) lightBtn.classList.add('active');
+    if (darkBtn) darkBtn.classList.remove('active');
+  }
+
+  if (darkBtn) {
+    darkBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setTheme('dark');
+    });
+  }
+  if (lightBtn) {
+    lightBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setTheme('light');
+    });
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTheme);
+} else {
+  initTheme();
+}
+
 // ── Sidebar toggle ──────────────────────────────────────────
 const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('sidebarToggle');

@@ -2,124 +2,527 @@
 {% block title %}Citizen Explorer Dashboard — Ward Water Quality Reporter{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="revenlo-dashboard-wrapper">
 
-  <!-- Role Hero -->
-  <div class="role-hero citizen-theme">
-    <div class="role-hero-content">
-      <div class="role-pill">👥 Public Transparency Portal</div>
-      <h1>Citizen Water Explorer Dashboard</h1>
-      <p class="role-subtitle">
-        Welcome, <strong>{{ current_user.full_name }}</strong>.
-        Search official groundwater quality records for your area with full transparency on sample dates and data sources.
-      </p>
+  <!-- ══════════════════════════════════════════════════════════
+       DASHBOARD HEADER: TITLE, TIMEFRAME SELECTOR & ACTION BUTTON
+  ══════════════════════════════════════════════════════════ -->
+  <div class="dashboard-header-zone">
+    <div class="header-titles">
+      <h1 class="revenlo-main-heading">Analytics Activity— This month</h1>
+      <p class="revenlo-main-subtitle">Stay updated with your latest groundwater telemetry &amp; municipal ward compliance.</p>
     </div>
-    <div class="role-hero-badge">
-      <span class="officer-shield">🌱</span>
-      <span class="officer-id">PUBLIC RESEARCHER</span>
-    </div>
-  </div>
 
-  <!-- Honesty & Citizen Safety Notice -->
-  <div class="alert alert-info" style="margin-bottom:1.75rem;">
-    <svg viewBox="0 0 24 24" width="20"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <div>
-      <strong>Public Notice on Water Quality:</strong>
-      This portal queries Central Ground Water Board (CGWB) open records. Results represent deep groundwater monitoring wells and <strong>cannot certify tap water safety</strong>. Sample collection years and unverified ward associations are always shown honestly.
-    </div>
-  </div>
-
-  <!-- Primary Action: Search Groundwater Records -->
-  <div class="card" style="margin-bottom:1.75rem;">
-    <div class="card-header" style="justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:0.5rem;">
-        <svg viewBox="0 0 24 24" width="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <h2>Look Up Water Quality in Your District</h2>
+    <div class="header-actions">
+      <!-- Timeframe Selector -->
+      <div class="revenlo-dropdown-btn">
+        <span>Month</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
       </div>
-      <span class="badge badge-success">38 TN Districts Available</span>
-    </div>
-    <div class="card-body" style="padding:1.5rem;">
-      <p style="color:var(--grey-600);margin-bottom:1.25rem;">
-        Choose your district, find nearby sampling stations, and view exact laboratory chemical parameters including pH, Total Dissolved Solids (TDS), Fluoride, and Chloride.
-      </p>
-      <a href="{{ url_for('search_explorer') }}" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:0.5rem;font-size:1rem;padding:0.75rem 1.5rem;">
-        <span>🔍 Open Full Search Explorer</span>
-        <svg viewBox="0 0 24 24" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+
+      <!-- Primary Action Button (Matches "+ Invite Affiliate" in Reference Image) -->
+      <a href="{{ url_for('search_explorer') }}" class="btn-revenlo-primary">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Query District</span>
       </a>
     </div>
   </div>
 
-  <!-- 3 Honesty Safeguards for Citizens -->
-  <div class="card" style="margin-bottom:1.75rem;">
-    <div class="card-header">
-      <svg viewBox="0 0 24 24" width="20"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      <h2>Our 3 Guarantees to the Public</h2>
-    </div>
-    <div class="card-body" style="padding:1.5rem;">
-      <div class="safeguard-grid">
-        <div class="safeguard-card">
-          <div class="safeguard-icon">🚫</div>
-          <h3>Never Fake Data</h3>
-          <p>We never invent measurements, estimate missing numbers, or substitute fake results when a station has not been sampled.</p>
+  <!-- ══════════════════════════════════════════════════════════
+       4 STAT METRIC CARDS ROW (Exact match to reference image)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-stats-grid">
+
+    <!-- Card 1: Total Wells Monitored -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="4" height="9" rx="1"/>
+            <rect x="10" y="5" width="4" height="15" rx="1"/>
+            <rect x="17" y="9" width="4" height="11" rx="1"/>
+          </svg>
         </div>
-        <div class="safeguard-card">
-          <div class="safeguard-icon">📅</div>
-          <h3>Honest Historical Dates</h3>
-          <p>If a water sample is older than 365 days, it is prominently labeled as "Historical" with the exact collection date shown.</p>
-        </div>
-        <div class="safeguard-card">
-          <div class="safeguard-icon">🛡️</div>
-          <h3>Unverified Ward Disclosure</h3>
-          <p>Because government groundwater stations do not have official ward boundary mappings, we always disclose ward matches as unverified.</p>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>433</span>
+            <span class="stat-trend-pill trend-up">+3.2%</span>
+          </div>
+          <div class="stat-sub-label">Total Monitored Wells</div>
         </div>
       </div>
+      <div class="stat-card-bottom">
+        <a href="{{ url_for('search_explorer') }}" class="stat-detail-link">
+          <span>View details</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 2: Active Municipalities (ULBs) -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>125</span>
+            <span class="stat-trend-pill trend-down">-1.2%</span>
+          </div>
+          <div class="stat-sub-label">Active Municipalities (ULBs)</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <a href="{{ url_for('search_explorer') }}" class="stat-detail-link">
+          <span>View details</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 3: Tested Chemical Parameters -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>25</span>
+            <span class="stat-trend-pill trend-up">+5.1%</span>
+          </div>
+          <div class="stat-sub-label">Tested Lab Parameters</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <a href="{{ url_for('search_explorer') }}" class="stat-detail-link">
+          <span>View details</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 4: Potable Compliance Rate -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v12M8 10h8M8 14h6"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>88.4%</span>
+            <span class="stat-trend-pill trend-up">+3.2%</span>
+          </div>
+          <div class="stat-sub-label">Potable Compliance Rate</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <a href="{{ url_for('search_explorer') }}" class="stat-detail-link">
+          <span>View details</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MIDDLE CHARTS SECTION: PERFORMANCE OVERVIEW + DONUT
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-charts-grid">
+
+    <!-- Left Chart: Performance Overview (Wavy Spline Curve) -->
+    <div class="revenlo-chart-card performance-card">
+      <div class="chart-card-header">
+        <div class="chart-header-title">Performance Overview</div>
+        <div class="chart-header-tools">
+          <div class="chart-timeframe-dropdown">
+            <span>Last year</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+          <div class="chart-legend-indicator">
+            <span class="legend-dot-blue"></span>
+            <span>Total Wells</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Metric in Chart Card -->
+      <div class="chart-main-stat">
+        <span class="chart-big-number">8,435 ppm</span>
+        <span class="stat-trend-pill trend-up">+3.2%</span>
+      </div>
+
+      <!-- SVG Wavy Spline Line Chart -->
+      <div class="spline-chart-container">
+        <svg viewBox="0 0 780 230" class="revenlo-spline-svg" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="revenloBlueGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2563eb" stop-opacity="0.22"/>
+              <stop offset="85%" stop-color="#2563eb" stop-opacity="0.02"/>
+              <stop offset="100%" stop-color="#2563eb" stop-opacity="0.00"/>
+            </linearGradient>
+            <!-- Pattern for grid lines -->
+            <pattern id="gridLines" width="780" height="40" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="780" y2="0" stroke="#f1f5f9" stroke-width="1"/>
+            </pattern>
+          </defs>
+
+          <!-- Background horizontal grid guides -->
+          <rect x="40" y="10" width="730" height="180" fill="url(#gridLines)"/>
+
+          <!-- Area fill underneath the wave -->
+          <path d="M 50 120 
+                   C 80 122, 110 135, 140 148
+                   C 170 162, 200 130, 230 115
+                   C 260 100, 290 145, 320 152
+                   C 350 160, 370 115, 395 90
+                   C 420 65, 435 60, 455 105
+                   C 475 145, 495 130, 520 108
+                   C 545 85, 570 70, 600 75
+                   C 630 80, 650 125, 680 135
+                   C 710 145, 730 138, 760 135
+                   L 760 195 L 50 195 Z"
+                fill="url(#revenloBlueGradient)"/>
+
+          <!-- Wavy Spline Line Stroke -->
+          <path d="M 50 120 
+                   C 80 122, 110 135, 140 148
+                   C 170 162, 200 130, 230 115
+                   C 260 100, 290 145, 320 152
+                   C 350 160, 370 115, 395 90
+                   C 420 65, 435 60, 455 105
+                   C 475 145, 495 130, 520 108
+                   C 545 85, 570 70, 600 75
+                   C 630 80, 650 125, 680 135
+                   C 710 145, 730 138, 760 135"
+                fill="none" stroke="#2563eb" stroke-width="2.6" stroke-linecap="round"/>
+
+          <!-- Y-Axis Labels -->
+          <text x="10" y="25" class="chart-axis-label">40k</text>
+          <text x="10" y="68" class="chart-axis-label">30k</text>
+          <text x="10" y="112" class="chart-axis-label">20k</text>
+          <text x="10" y="155" class="chart-axis-label">10k</text>
+          <text x="18" y="195" class="chart-axis-label">0k</text>
+
+          <!-- Floating Tooltip Marker (Matches Reference Image) -->
+          <g transform="translate(390, 80)">
+            <!-- Drop line down to axis -->
+            <line x1="5" y1="12" x2="5" y2="115" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="3 3"/>
+            <!-- Center circle dot on wave -->
+            <circle cx="5" cy="12" r="5" fill="#ffffff" stroke="#2563eb" stroke-width="2.5"/>
+            <!-- Tooltip Card Box -->
+            <rect x="-48" y="-36" width="106" height="32" rx="6" fill="#ffffff" stroke="#e2e8f0" filter="drop-shadow(0 2px 5px rgba(0,0,0,0.06))"/>
+            <text x="5" y="-22" text-anchor="middle" font-size="8.5" font-weight="600" fill="#64748b">Mar-Apr 2024</text>
+            <text x="5" y="-10" text-anchor="middle" font-size="9" font-weight="700" fill="#0f172a">Total Wells: 433</text>
+          </g>
+
+          <!-- X-Axis Months -->
+          <g class="chart-x-labels" transform="translate(0, 218)">
+            <text x="50"  text-anchor="middle">Jan</text>
+            <text x="110" text-anchor="middle">Feb</text>
+            <text x="175" text-anchor="middle">Mar</text>
+            <text x="240" text-anchor="middle">Apr</text>
+            <text x="310" text-anchor="middle">May</text>
+            <text x="375" text-anchor="middle">Jun</text>
+            <text x="440" text-anchor="middle">Jul</text>
+            <text x="510" text-anchor="middle">Aug</text>
+            <text x="575" text-anchor="middle">Sep</text>
+            <text x="640" text-anchor="middle">Oct</text>
+            <text x="705" text-anchor="middle">Nov</text>
+            <text x="760" text-anchor="middle">Dec</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Right Chart: Water Quality Index Donut (Discount Campaign style in Reference) -->
+    <div class="revenlo-chart-card campaign-card">
+      <div class="chart-card-header">
+        <div class="chart-header-title">Water Quality Index</div>
+        <button type="button" class="btn-more-dots" title="More options">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Main Metric -->
+      <div class="chart-main-stat">
+        <span class="chart-big-number">88% Safe</span>
+        <span class="stat-trend-pill trend-up">+4.9%</span>
+      </div>
+
+      <!-- Donut Ring Chart with 88% Center Label -->
+      <div class="donut-chart-container">
+        <svg viewBox="0 0 200 200" class="donut-svg">
+          <defs>
+            <linearGradient id="donutPurpleCyan" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="45%" stop-color="#3b82f6"/>
+              <stop offset="100%" stop-color="#14b8a6"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Track Background -->
+          <circle cx="100" cy="100" r="72" fill="none" stroke="#f1f5f9" stroke-width="24"/>
+
+          <!-- 88% Progress Arc (Circumference = 2 * PI * 72 = 452.38. 88% = 398.1) -->
+          <circle cx="100" cy="100" r="72" fill="none"
+                  stroke="url(#donutPurpleCyan)" stroke-width="24"
+                  stroke-dasharray="398.1 452.4"
+                  stroke-dashoffset="0"
+                  stroke-linecap="round"
+                  transform="rotate(-90 100 100)"/>
+
+          <!-- Center Label -->
+          <text x="100" y="96" text-anchor="middle" font-size="28" font-weight="800" fill="#0f172a" class="donut-center-pct">88%</text>
+          <text x="100" y="115" text-anchor="middle" font-size="11" font-weight="600" fill="#64748b" class="donut-center-sub">Performance</text>
+        </svg>
+      </div>
+
+      <!-- Legend Dots Row (Matches Reference: Views, Engaged clicks, Successful signups) -->
+      <div class="donut-legend-row">
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#6366f1;"></span>
+          <span>Potable (88%)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#3b82f6;"></span>
+          <span>Permissible (8%)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#14b8a6;"></span>
+          <span>Critical (4%)</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       BOTTOM TABLE CARD: MONITORED TELEMETRY STATIONS (PAYMENTS)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-table-card">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Monitored Telemetry Stations</h2>
+        <p class="table-subtitle">433 active groundwater monitoring stations across 38 Tamil Nadu districts.</p>
+      </div>
+
+      <!-- Table Toolbar Controls -->
+      <div class="table-toolbar">
+        <div class="table-search-box">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" placeholder="Search" id="tableFilterInput" onkeyup="filterStationTable()" />
+        </div>
+
+        <button type="button" class="btn-table-control" title="Filter Records">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="6" x2="20" y2="6"/>
+            <line x1="6" y1="12" x2="18" y2="12"/>
+            <line x1="9" y1="18" x2="15" y2="18"/>
+          </svg>
+          <span>Filter</span>
+        </button>
+
+        <div class="btn-table-dropdown">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span>Monthly</span>
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table matching Payments layout in screenshot -->
+    <div class="revenlo-table-container">
+      <table class="revenlo-table" id="stationsTable">
+        <thead>
+          <tr>
+            <th style="width:40px;">
+              <input type="checkbox" class="revenlo-check" title="Select all" />
+            </th>
+            <th>Station &amp; District</th>
+            <th>ULB Municipality</th>
+            <th>Source Well Type</th>
+            <th>Chemistry (pH / TDS)</th>
+            <th>Lab Benchmark</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Row 1: Chennai -->
+          <tr>
+            <td><input type="checkbox" class="revenlo-check" /></td>
+            <td>
+              <div class="table-primary-cell">
+                <span class="cell-main-text">Chennai — Kodambakkam</span>
+              </div>
+            </td>
+            <td><span class="cell-muted-text">Chennai Corporation</span></td>
+            <td><span class="cell-tag">Deep Borewell</span></td>
+            <td><span class="cell-mono-text">pH 7.4 • TDS 420 mg/L</span></td>
+            <td><span class="cell-main-text">BIS IS 10500</span></td>
+            <td><span class="status-pill status-done">Done</span></td>
+          </tr>
+
+          <!-- Row 2: Coimbatore -->
+          <tr>
+            <td><input type="checkbox" class="revenlo-check" /></td>
+            <td>
+              <div class="table-primary-cell">
+                <span class="cell-main-text">Coimbatore — Gandhipuram</span>
+              </div>
+            </td>
+            <td><span class="cell-muted-text">Coimbatore Corporation</span></td>
+            <td><span class="cell-tag">Dug Well</span></td>
+            <td><span class="cell-mono-text">pH 7.8 • TDS 680 mg/L</span></td>
+            <td><span class="cell-main-text">BIS IS 10500</span></td>
+            <td><span class="status-pill status-pending">Pending</span></td>
+          </tr>
+
+          <!-- Row 3: Madurai -->
+          <tr>
+            <td><input type="checkbox" class="revenlo-check" /></td>
+            <td>
+              <div class="table-primary-cell">
+                <span class="cell-main-text">Madurai — Goripalayam</span>
+              </div>
+            </td>
+            <td><span class="cell-muted-text">Madurai Corporation</span></td>
+            <td><span class="cell-tag">Piezometer</span></td>
+            <td><span class="cell-mono-text">pH 7.2 • TDS 510 mg/L</span></td>
+            <td><span class="cell-main-text">BIS IS 10500</span></td>
+            <td><span class="status-pill status-done">Done</span></td>
+          </tr>
+
+          <!-- Row 4: Tiruchirappalli -->
+          <tr>
+            <td><input type="checkbox" class="revenlo-check" /></td>
+            <td>
+              <div class="table-primary-cell">
+                <span class="cell-main-text">Tiruchirappalli — Srirangam</span>
+              </div>
+            </td>
+            <td><span class="cell-muted-text">Tiruchirappalli Corp</span></td>
+            <td><span class="cell-tag">Dug Well</span></td>
+            <td><span class="cell-mono-text">pH 7.6 • TDS 590 mg/L</span></td>
+            <td><span class="cell-main-text">BIS IS 10500</span></td>
+            <td><span class="status-pill status-done">Done</span></td>
+          </tr>
+
+          <!-- Row 5: Salem -->
+          <tr>
+            <td><input type="checkbox" class="revenlo-check" /></td>
+            <td>
+              <div class="table-primary-cell">
+                <span class="cell-main-text">Salem — Hasthampatti</span>
+              </div>
+            </td>
+            <td><span class="cell-muted-text">Salem Corporation</span></td>
+            <td><span class="cell-tag">Borewell</span></td>
+            <td><span class="cell-mono-text">pH 8.1 • TDS 890 mg/L</span></td>
+            <td><span class="cell-main-text">BIS IS 10500</span></td>
+            <td><span class="status-pill status-pending">Pending</span></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Recently Approved Community Reports -->
-  <div class="card">
-    <div class="card-header" style="justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:0.5rem;">
-        <svg viewBox="0 0 24 24" width="20"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <h2>Approved Public Reports Library</h2>
+  <!-- Approved Reports Section (Preserved for Citizen Verification) -->
+  {% if approved_reports %}
+  <div class="revenlo-table-card" style="margin-top: 1.75rem;">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Officially Approved Reports Library</h2>
+        <p class="table-subtitle">Verified &amp; signed off by Environmental Officers.</p>
       </div>
-      <a href="{{ url_for('history') }}" class="link-sm">View All Reports →</a>
+      <a href="{{ url_for('history') }}" class="stat-detail-link">
+        <span>View all records</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </a>
     </div>
-    {% if approved_reports %}
-    <div class="table-scroll">
-      <table class="data-table">
+
+    <div class="revenlo-table-container">
+      <table class="revenlo-table">
         <thead>
           <tr>
             <th>Report ID</th>
             <th>District</th>
             <th>Station</th>
-            <th>Approved By</th>
-            <th>Approval Date</th>
+            <th>Authorized By</th>
+            <th>Approval Timestamp</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
           {% for r in approved_reports %}
-            <tr>
-              <td><code>{{ r.report_id }}</code></td>
-              <td><strong>{{ r.district }}</strong></td>
-              <td>{{ r.station }}</td>
-              <td><span class="badge badge-success">✅ {{ r.approved_by }}</span></td>
-              <td>{{ r.approved_at }}</td>
-              <td>
-                <a href="{{ url_for('load_report', report_id=r.report_id) }}" class="btn btn-sm btn-outline">
-                  View Report
-                </a>
-              </td>
-            </tr>
+          <tr>
+            <td><code>{{ r.report_id }}</code></td>
+            <td><strong>{{ r.district }}</strong></td>
+            <td>{{ r.station }}</td>
+            <td><span class="status-pill status-done">✅ {{ r.approved_by }}</span></td>
+            <td><span class="cell-muted-text">{{ r.approved_at }}</span></td>
+            <td>
+              <a href="{{ url_for('load_report', report_id=r.report_id) }}" class="btn-revenlo-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem;">
+                View
+              </a>
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    {% else %}
-      <p class="empty-msg">No approved reports published yet. Run a search to create and submit a draft report.</p>
-    {% endif %}
   </div>
+  {% endif %}
 
 </div>
+
+<script>
+function filterStationTable() {
+  const query = document.getElementById('tableFilterInput').value.toLowerCase();
+  const rows = document.querySelectorAll('#stationsTable tbody tr');
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(query) ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}

@@ -172,10 +172,20 @@ def register_user(
         return False, "Username must be at least 3 characters."
     if not password or len(password) < 4:
         return False, "Password must be at least 4 characters."
-    if not full_name:
-        return False, "Please enter your full name."
-    if role not in AVAILABLE_ROLES:
+    # Normalize role name
+    role_clean = role.strip()
+    if role_clean in ("Officer", "Environmental Officer"):
+        role = "Environmental Officer"
+    elif role_clean in ("Inspector", "Municipal Quality Inspector"):
+        role = "Municipal Quality Inspector"
+    elif role_clean in ("Hydrologist", "Senior Hydrologist"):
+        role = "Senior Hydrologist"
+    elif role_clean in ("Citizen", "Public Citizen", "Public Citizen / Researcher"):
         role = "Public Citizen / Researcher"
+    elif role_clean not in AVAILABLE_ROLES:
+        role = "Public Citizen / Researcher"
+    else:
+        role = role_clean
 
     with _get_connection() as conn:
         existing = conn.execute(

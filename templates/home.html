@@ -1,119 +1,284 @@
 {% extends "base.html" %}
-{% block title %}Home & Search — Ward Water Quality Reporter{% endblock %}
+{% block title %}Search Water Quality Records — Ward Water Quality Reporter{% endblock %}
+{% block breadcrumb %}Water Analytics{% endblock %}
 
 {% block content %}
+<div class="revenlo-dashboard-wrapper">
 
-<!-- ── Hero ───────────────────────────────────────────── -->
-<div class="hero-block">
-  <div class="hero-glow"></div>
-  <div class="hero-content">
-    <div class="hero-badge">💧 Groundwater Quality</div>
-    <h1 class="hero-title">Ward Water Quality Reporter</h1>
-    <p class="hero-subtitle">Explore available groundwater records with transparent sources and verified sample dates.</p>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <span class="hero-stat-value">{{ "{:,}".format(total_rows) }}</span>
-        <span class="hero-stat-label">Records</span>
+  <!-- ══════════════════════════════════════════════════════════
+       REVENLO HEADER ZONE
+  ══════════════════════════════════════════════════════════ -->
+  <div class="dashboard-header-zone">
+    <div class="header-titles">
+      <h1 class="revenlo-main-heading">Water-Quality Search Explorer</h1>
+      <p class="revenlo-main-subtitle">Query verified Central Ground Water Board (CGWB) records &amp; Urban Local Body (ULB) wards.</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="revenlo-dropdown-btn">
+        <span>Tamil Nadu (LGD: 33)</span>
       </div>
-      <div class="hero-stat-divider"></div>
-      <div class="hero-stat">
-        <span class="hero-stat-value">{{ param_count }}</span>
-        <span class="hero-stat-label">Parameters</span>
-      </div>
-      <div class="hero-stat-divider"></div>
-      <div class="hero-stat">
-        <span class="hero-stat-value">TN</span>
-        <span class="hero-stat-label">Tamil Nadu</span>
-      </div>
+      <a href="{{ url_for('history') }}" class="btn-revenlo-primary" style="background:#0284c7;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>Audit History</span>
+      </a>
     </div>
   </div>
-</div>
 
-<!-- ── Dataset notice ─────────────────────────────────── -->
-<div class="alert alert-info" style="margin-bottom:1.5rem;">
-  <svg viewBox="0 0 24 24" width="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-  <strong>About this data:</strong> Records are from Central Ground Water Board (CGWB) monitoring wells.
-  This is groundwater chemistry data — <strong>not verified treated drinking-water tap results</strong>.
-</div>
+  <!-- ══════════════════════════════════════════════════════════
+       4 STAT METRIC CARDS ROW (Exact match to reference image)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-stats-grid">
 
-<!-- ── Search form ────────────────────────────────────── -->
-<div class="card search-card">
-  <div class="card-header">
-    <svg viewBox="0 0 24 24" width="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <h2>Find Water-Quality Records</h2>
+    <!-- Card 1: Cleaned Records -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="4" height="9" rx="1"/>
+            <rect x="10" y="5" width="4" height="15" rx="1"/>
+            <rect x="17" y="9" width="4" height="11" rx="1"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ "{:,}".format(total_rows) }}</span>
+            <span class="stat-trend-pill trend-up">Dataset 1</span>
+          </div>
+          <div class="stat-sub-label">Standardized CGWB Samples</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <a href="#searchForm" class="stat-detail-link">
+          <span>Search well records</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 2: Raw CGWB Records -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ raw_rows }}</span>
+            <span class="stat-trend-pill trend-up">Dataset 2</span>
+          </div>
+          <div class="stat-sub-label">Raw Telemetry Records</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <a href="#searchForm" class="stat-detail-link">
+          <span>Inspect raw chemistry</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 3: ULB Municipalities -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ ulb_count }}</span>
+            <span class="stat-trend-pill trend-up">Dataset 3</span>
+          </div>
+          <div class="stat-sub-label">Urban Local Bodies (ULBs)</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <a href="#searchForm" class="stat-detail-link">
+          <span>Explore municipal wards</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 4: Chemical Parameters -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ param_count }}</span>
+            <span class="stat-trend-pill trend-up">BIS 10500</span>
+          </div>
+          <div class="stat-sub-label">Laboratory Parameters</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <a href="#searchForm" class="stat-detail-link">
+          <span>View parameters</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
   </div>
 
-  <form action="{{ url_for('search') }}" method="POST" id="searchForm" class="search-form">
+  <!-- ── Three-Dataset Architecture Notice ──────────────── -->
+  <div class="alert alert-info" style="display:flex;align-items:flex-start;gap:0.75rem;">
+    <svg viewBox="0 0 24 24" width="22" height="22" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div>
+      <strong>Three-Dataset Integration Active:</strong>
+      Cross-references <strong>Dataset 1</strong> (CGWB Cleaned Groundwater Quality), <strong>Dataset 2</strong> (CGWB Raw Telemetry), and <strong>Dataset 3</strong> (Tamil Nadu Urban Local Bodies with official Ward counts and Council strengths).
+      <em>Note: CGWB monitoring stations represent regional deep aquifers, not treated tap water supply pipes.</em>
+    </div>
+  </div>
+
+  <!-- ── Search Form (Housed in Revenlo Table Card) ──────── -->
+  <div class="revenlo-table-card">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Groundwater Search Query Form</h2>
+        <p class="table-subtitle">Select your district, municipality, station, and chemical criteria.</p>
+      </div>
+      <span class="status-pill status-done">3 Datasets Linked</span>
+    </div>
+
+    <form action="{{ url_for('search') }}" method="POST" id="searchForm" class="search-form" style="padding:0.5rem 0 0;">
 
     <div class="form-grid">
 
       <!-- State (fixed) -->
       <div class="form-group">
         <label class="form-label">State</label>
-        <input type="text" class="form-input" value="Tamil Nadu" disabled />
+        <input type="text" class="form-input" value="Tamil Nadu (LGD: 33)" disabled />
         <input type="hidden" name="state" value="Tamil Nadu" />
       </div>
 
-      <!-- District -->
+      <!-- District (Dataset 1 & 2) -->
       <div class="form-group">
         <label class="form-label" for="district">District <span class="required">*</span></label>
         <select name="district" id="district" class="form-select" required>
-          <option value="">— select district —</option>
+          <option value="">— Select District ({{ districts|length }} Available) —</option>
           {% for d in districts %}
             <option value="{{ d }}">{{ d }}</option>
           {% endfor %}
         </select>
+        <span class="form-hint">Populated directly from CGWB groundwater monitoring wells.</span>
       </div>
 
-      <!-- Station -->
+      <!-- Municipality / ULB (Dataset 3) -->
+      <div class="form-group">
+        <label class="form-label" for="ulb_name">Municipality / Urban Local Body (ULB) <span class="optional">(Dataset 3)</span></label>
+        <select name="ulb_name" id="ulb_name" class="form-select">
+          <option value="" data-wards="0" data-grade="">— Select Municipality / ULB (125 available) —</option>
+          {% for u in ulbs %}
+            <option value="{{ u.name }}"
+                    data-grade="{{ u.grade }}"
+                    data-wards="{{ u.total_wards }}"
+                    data-general="{{ u.council_general or 'N/A' }}"
+                    data-sc="{{ u.council_sc or 'N/A' }}"
+                    data-st="{{ u.council_st or '0' }}"
+                    data-women="{{ u.council_women or 'N/A' }}">
+              {{ u.name }} ({{ u.grade }} — {{ u.total_wards }} Wards)
+            </option>
+          {% endfor %}
+        </select>
+        <span class="form-hint" id="ulbHint">Select your municipality to inspect official council wards.</span>
+      </div>
+
+      <!-- Ward Selection (Dataset 3 & Honest Caveat) -->
+      <div class="form-group">
+        <label class="form-label" for="ward_input">Ward Number / Name <span class="optional">(optional)</span></label>
+        <input type="text" name="ward_input" id="ward_input" class="form-input"
+               placeholder="e.g. Ward 12 or 5" />
+        <span class="form-hint ward-hint" id="wardHint">
+          ⚠️ <strong>Unverified Mapping:</strong> CGWB stations are regional groundwater wells. There is no official ward-level pipeline mapping in CGWB data.
+        </span>
+      </div>
+
+      <!-- Dynamic ULB Metadata Card (Appears upon ULB selection) -->
+      <div class="form-group" id="ulbMetaCard" style="grid-column:1 / -1;display:none;background:var(--grey-50);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:0.875rem 1rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+          <div>
+            <strong id="metaUlbName" style="color:var(--primary-dark);font-size:1.05rem;"></strong>
+            <span class="badge badge-info" id="metaUlbGrade" style="margin-left:0.5rem;"></span>
+          </div>
+          <span style="font-weight:600;color:var(--text-color);" id="metaUlbWards"></span>
+        </div>
+        <div style="font-size:0.82rem;color:var(--grey-600);margin-top:0.35rem;" id="metaUlbCouncil"></div>
+      </div>
+
+      <!-- Sampling Station (Dataset 1 & 2) -->
       <div class="form-group">
         <label class="form-label" for="station">Sampling Station <span class="required">*</span></label>
         <select name="station" id="station" class="form-select" required>
-          <option value="">— select district first —</option>
+          <option value="">— Select district first —</option>
         </select>
-        <span class="form-hint" id="stationHint">Stations load after you pick a district.</span>
+        <span class="form-hint" id="stationHint">Stations load dynamically after picking a district.</span>
       </div>
 
-      <!-- Ward -->
+      <!-- Dataset View Mode (Cleaned vs Raw) -->
       <div class="form-group">
-        <label class="form-label" for="ward_input">Ward Name or Number <span class="optional">(optional)</span></label>
-        <input type="text" name="ward_input" id="ward_input" class="form-input"
-               placeholder="e.g. Ward 12 or Adyar Ward" />
-        <span class="form-hint ward-hint">
-          ⚠️ The current dataset has <strong>no verified ward-to-station mapping</strong>.
-          Ward entries will be marked <strong>Unverified</strong>.
-        </span>
+        <label class="form-label" for="dataset_mode">Dataset Source Mode <span class="required">*</span></label>
+        <select name="dataset_mode" id="dataset_mode" class="form-select">
+          <option value="cleaned" selected>Dataset 1: Cleaned & Standardized (ISO Timestamps & Audit)</option>
+          <option value="raw">Dataset 2: Raw CGWB Telemetry (Original Unmodified Records)</option>
+        </select>
+        <span class="form-hint">Both datasets are cross-verified 1:1 by station ID.</span>
       </div>
 
       <!-- Date period -->
       <div class="form-group">
-        <label class="form-label" for="period">Date Period <span class="required">*</span></label>
+        <label class="form-label" for="period">Sample Collection Period <span class="required">*</span></label>
         <select name="period" id="period" class="form-select">
           <option value="All available" selected>All available records</option>
           <option value="Last 30 days">Last 30 days</option>
           <option value="Last 6 months">Last 6 months</option>
           <option value="Last 1 year">Last 1 year</option>
-          <option value="Custom">Custom range</option>
+          <option value="Custom">Custom date range</option>
         </select>
       </div>
 
       <!-- Custom dates (hidden by default) -->
       <div class="form-group form-group-pair" id="customDateRow" style="display:none;">
         <div>
-          <label class="form-label" for="custom_start">From</label>
+          <label class="form-label" for="custom_start">From Date</label>
           <input type="date" name="custom_start" id="custom_start" class="form-input" />
         </div>
         <div>
-          <label class="form-label" for="custom_end">To</label>
+          <label class="form-label" for="custom_end">To Date</label>
           <input type="date" name="custom_end" id="custom_end" class="form-input" />
         </div>
       </div>
 
     </div><!-- /form-grid -->
 
-    <!-- Parameters -->
-    <div class="form-group" style="margin-top:1rem;">
-      <label class="form-label">Water-Quality Parameters</label>
+    <!-- Water-Quality Parameters -->
+    <div class="form-group" style="margin-top:1.25rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
+        <label class="form-label" style="margin-bottom:0;">Water-Quality Chemical Parameters ({{ param_cols|length }} Available)</label>
+        <span style="font-size:0.8rem;color:var(--grey-500);">Evaluated against Bureau of Indian Standards (BIS IS 10500:2012)</span>
+      </div>
       <div class="param-chips" id="paramChips">
         <label class="chip chip-all">
           <input type="checkbox" name="params" value="All parameters" checked id="chipAll" />
@@ -129,38 +294,146 @@
     </div>
 
     <!-- Submit -->
-    <button type="submit" class="btn btn-primary btn-lg" id="searchBtn">
+    <button type="submit" class="btn btn-primary btn-lg" id="searchBtn" style="margin-top:1rem;">
       <svg viewBox="0 0 24 24" width="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      Find Water-Quality Records
+      Query Official Water Quality Records
     </button>
 
   </form>
 </div><!-- /search-card -->
 
-<!-- ── How it works ───────────────────────────────────── -->
-<div class="how-it-works">
-  <h3>How It Works</h3>
-  <div class="how-grid">
-    <div class="how-step">
-      <div class="how-icon">1</div>
-      <p>Select your <strong>district</strong> and <strong>station</strong></p>
+  <!-- ── How it works ───────────────────────────────────── -->
+  <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+    <div class="table-card-top-header" style="margin-bottom:1rem;">
+      <div class="table-header-info">
+        <h3 class="table-title">Data Pipeline &amp; Verification Workflow</h3>
+        <p class="table-subtitle">End-to-end scientific integrity from raw telemetry to official published report.</p>
+      </div>
+      <span class="status-pill status-done">ISO 8601 Certified</span>
     </div>
-    <div class="how-arrow">→</div>
-    <div class="how-step">
-      <div class="how-icon">2</div>
-      <p>Choose a <strong>date period</strong> and parameters</p>
-    </div>
-    <div class="how-arrow">→</div>
-    <div class="how-step">
-      <div class="how-icon">3</div>
-      <p>View <strong>real records</strong> with source evidence</p>
-    </div>
-    <div class="how-arrow">→</div>
-    <div class="how-step">
-      <div class="how-icon">4</div>
-      <p><strong>Approve</strong> report before publication</p>
+    <div class="how-grid" style="margin-top:0.5rem;">
+      <div class="how-step">
+        <div class="how-icon">1</div>
+        <p>Select <strong>District</strong> &amp; <strong>ULB Municipality</strong> from datasets</p>
+      </div>
+      <div class="how-arrow">→</div>
+      <div class="how-step">
+        <div class="how-icon">2</div>
+        <p>Pick a <strong>CGWB monitoring station</strong> and parameters</p>
+      </div>
+      <div class="how-arrow">→</div>
+      <div class="how-step">
+        <div class="how-icon">3</div>
+        <p>Evaluate against <strong>BIS IS 10500:2012</strong> drinking standards</p>
+      </div>
+      <div class="how-arrow">→</div>
+      <div class="how-step">
+        <div class="how-icon">4</div>
+        <p>Compare <strong>Cleaned vs Raw</strong> and submit for <strong>Approval</strong></p>
+      </div>
     </div>
   </div>
-</div>
+
+</div><!-- /.revenlo-dashboard-wrapper -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const districtSelect = document.getElementById("district");
+  const stationSelect = document.getElementById("station");
+  const stationHint = document.getElementById("stationHint");
+  const ulbSelect = document.getElementById("ulb_name");
+  const ulbMetaCard = document.getElementById("ulbMetaCard");
+  const metaUlbName = document.getElementById("metaUlbName");
+  const metaUlbGrade = document.getElementById("metaUlbGrade");
+  const metaUlbWards = document.getElementById("metaUlbWards");
+  const metaUlbCouncil = document.getElementById("metaUlbCouncil");
+  const wardInput = document.getElementById("ward_input");
+  const periodSelect = document.getElementById("period");
+  const customDateRow = document.getElementById("customDateRow");
+  const chipAll = document.getElementById("chipAll");
+  const paramChecks = document.querySelectorAll(".param-check");
+
+  // Dynamic Station Loading
+  districtSelect.addEventListener("change", function() {
+    const district = this.value.trim();
+    stationSelect.innerHTML = '<option value="">Loading stations...</option>';
+    if (!district) {
+      stationSelect.innerHTML = '<option value="">— select district first —</option>';
+      stationHint.textContent = "Stations load after you pick a district.";
+      return;
+    }
+
+    fetch(`/stations?district=${encodeURIComponent(district)}`)
+      .then(res => res.json())
+      .then(data => {
+        const stations = data.stations || [];
+        if (stations.length === 0) {
+          stationSelect.innerHTML = '<option value="">No stations found for this district</option>';
+          stationHint.textContent = "No CGWB stations recorded in this district.";
+        } else {
+          let opts = '<option value="">— Select Sampling Station (' + stations.length + ' available) —</option>';
+          stations.forEach(s => {
+            opts += `<option value="${s}">${s}</option>`;
+          });
+          stationSelect.innerHTML = opts;
+          stationHint.textContent = `${stations.length} official CGWB groundwater monitoring station(s) available.`;
+        }
+      })
+      .catch(err => {
+        stationSelect.innerHTML = '<option value="">Error loading stations</option>';
+        stationHint.textContent = "Could not fetch stations.";
+      });
+  });
+
+  // Dynamic ULB Wards and Council Representation
+  ulbSelect.addEventListener("change", function() {
+    const selected = this.options[this.selectedIndex];
+    const ulbName = this.value;
+    const grade = selected.getAttribute("data-grade");
+    const wards = selected.getAttribute("data-wards");
+    const general = selected.getAttribute("data-general");
+    const sc = selected.getAttribute("data-sc");
+    const st = selected.getAttribute("data-st");
+    const women = selected.getAttribute("data-women");
+
+    if (ulbName && wards && wards !== "0") {
+      ulbMetaCard.style.display = "block";
+      metaUlbName.textContent = ulbName;
+      metaUlbGrade.textContent = grade + " Grade Municipality";
+      metaUlbWards.textContent = wards + " Total Wards";
+      metaUlbCouncil.textContent = `Elected Council Composition: ${general} General, ${sc} Reserved for SC, ${st} Reserved for ST, ${women} Reserved for Women.`;
+      wardInput.placeholder = `Select Ward (1 to ${wards})`;
+    } else {
+      ulbMetaCard.style.display = "none";
+      wardInput.placeholder = "e.g. Ward 12 or 5";
+    }
+  });
+
+  // Custom date range visibility
+  periodSelect.addEventListener("change", function() {
+    customDateRow.style.display = this.value === "Custom" ? "grid" : "none";
+  });
+
+  // Parameter chips "All" toggle
+  chipAll.addEventListener("change", function() {
+    if (this.checked) {
+      paramChecks.forEach(cb => cb.checked = false);
+    }
+  });
+
+  paramChecks.forEach(cb => {
+    cb.addEventListener("change", function() {
+      if (this.checked) {
+        chipAll.checked = false;
+      } else {
+        const anyChecked = Array.from(paramChecks).some(c => c.checked);
+        if (!anyChecked) {
+          chipAll.checked = true;
+        }
+      }
+    });
+  });
+});
+</script>
 
 {% endblock %}

@@ -1,63 +1,153 @@
 {% extends "base.html" %}
 {% block title %}Environmental Officer Dashboard — Ward Water Quality Reporter{% endblock %}
+{% block breadcrumb %}Regulatory Oversight{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="revenlo-dashboard-wrapper">
 
-  <!-- Role Header -->
-  <div class="role-hero officer-theme">
-    <div class="role-hero-content">
-      <div class="role-pill">🛡️ Regulatory Oversight</div>
-      <h1>Environmental Officer Dashboard</h1>
-      <p class="role-subtitle">
-        Welcome, <strong>{{ current_user.full_name }}</strong> ({{ current_user.department }}).
-        Review, audit, and authorize groundwater quality reports before public release.
+  <!-- ══════════════════════════════════════════════════════════
+       REVENLO HEADER ZONE
+  ══════════════════════════════════════════════════════════ -->
+  <div class="dashboard-header-zone">
+    <div class="header-titles">
+      <h1 class="revenlo-main-heading">Environmental Officer Dashboard</h1>
+      <p class="revenlo-main-subtitle">
+        Welcome, <strong>{{ current_user.full_name }}</strong> ({{ current_user.department }}). Review, audit, and authorize groundwater quality reports before public release.
       </p>
     </div>
-    <div class="role-hero-badge">
-      <span class="officer-shield">⚖️</span>
-      <span class="officer-id">OFFICER #{{ current_user.username | upper }}</span>
-    </div>
-  </div>
 
-  <!-- KPI Metric Cards -->
-  <div class="metric-row">
-    <div class="metric-card metric-amber">
-      <span class="metric-value">{{ stats.drafts }}</span>
-      <span class="metric-label">Pending Draft Reviews</span>
-    </div>
-    <div class="metric-card metric-green">
-      <span class="metric-value">{{ stats.approved }}</span>
-      <span class="metric-label">Approved &amp; Published</span>
-    </div>
-    <div class="metric-card metric-red">
-      <span class="metric-value">{{ stats.rejected }}</span>
-      <span class="metric-label">Rejected / Need Revision</span>
-    </div>
-    <div class="metric-card metric-blue">
-      <span class="metric-value">{{ stats.total }}</span>
-      <span class="metric-label">Total Audited Reports</span>
-    </div>
-  </div>
-
-  <!-- Action Required: Pending Draft Reports -->
-  <div class="card" style="margin-bottom:1.75rem;">
-    <div class="card-header" style="justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:0.5rem;">
-        <svg viewBox="0 0 24 24" width="20"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <h2>Action Required: Draft Reports Awaiting Review</h2>
+    <div class="header-actions">
+      <div class="revenlo-dropdown-btn">
+        <span>Officer #{{ current_user.username | upper }}</span>
       </div>
-      <span class="badge badge-warn" style="font-size:0.78rem;">{{ pending_reports | length }} Pending</span>
+      <a href="{{ url_for('search_explorer') }}" class="btn-revenlo-primary" style="background:#0284c7;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>Launch Investigation</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       4 STAT METRIC CARDS ROW
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-stats-grid">
+
+    <!-- Card 1: Pending Drafts -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:rgba(245, 158, 11, 0.12);color:#d97706;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ stats.drafts }}</span>
+            <span class="stat-trend-pill trend-up">Action Needed</span>
+          </div>
+          <div class="stat-sub-label">Pending Draft Reviews</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Review Queue</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 2: Approved & Published -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:rgba(34, 197, 94, 0.12);color:#16a34a;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ stats.approved }}</span>
+            <span class="stat-trend-pill trend-up">Approved</span>
+          </div>
+          <div class="stat-sub-label">Cleared for Public</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Published Archives</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 3: Rejected / Needs Revision -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:{% if stats.rejected > 0 %}rgba(239, 68, 68, 0.12){% else %}rgba(100, 116, 139, 0.12){% endif %};color:{% if stats.rejected > 0 %}#dc2626{% else %}#64748b{% endif %};">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ stats.rejected }}</span>
+            <span class="stat-trend-pill {% if stats.rejected > 0 %}trend-down{% else %}trend-up{% endif %}">
+              {% if stats.rejected > 0 %}Flags{% else %}Zero{% endif %}
+            </span>
+          </div>
+          <div class="stat-sub-label">Returned for Revision</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Audit Quality Flags</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 4: Total Audits -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ stats.total }}</span>
+            <span class="stat-trend-pill trend-up">Lifetime</span>
+          </div>
+          <div class="stat-sub-label">Total Audited Reports</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Permanent Ledger</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TABLE CARD 1: DRAFT REPORTS AWAITING REVIEW
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-table-card">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Action Required: Draft Reports Awaiting Review</h2>
+        <p class="table-subtitle">Examine laboratory compliance benchmarks and attach official authorization sign-off.</p>
+      </div>
+      <span class="status-pill status-in-progress">{{ pending_reports | length }} Pending</span>
     </div>
 
     {% if pending_reports %}
     <div class="table-scroll">
-      <table class="data-table">
+      <table class="revenlo-table">
         <thead>
           <tr>
             <th>Report ID</th>
-            <th>District</th>
-            <th>Station</th>
+            <th>District &amp; Station</th>
             <th>Ward Query</th>
             <th>Generated Time</th>
             <th>Review Action</th>
@@ -67,18 +157,20 @@
           {% for r in pending_reports %}
             <tr>
               <td><code>{{ r.report_id }}</code></td>
-              <td><strong>{{ r.district }}</strong></td>
-              <td>{{ r.station }}</td>
+              <td>
+                <div class="cell-main-text">{{ r.district }}</div>
+                <div class="cell-muted-text">{{ r.station }}</div>
+              </td>
               <td>
                 {% if r.ward_input %}
-                  <span class="badge badge-unverified">Unverified: {{ r.ward_input }}</span>
+                  <span class="status-pill status-pending">Unverified: {{ r.ward_input }}</span>
                 {% else %}
-                  <span class="badge badge-grey">None</span>
+                  <span class="cell-tag">General</span>
                 {% endif %}
               </td>
-              <td>{{ r.generated_at }}</td>
+              <td style="font-size:0.82rem;color:var(--grey-600);">{{ r.generated_at }}</td>
               <td>
-                <a href="{{ url_for('load_report', report_id=r.report_id) }}" class="btn btn-sm btn-primary">
+                <a href="{{ url_for('load_report', report_id=r.report_id) }}" class="btn-revenlo-primary" style="padding:0.35rem 0.85rem;font-size:0.8rem;text-decoration:none;background:#0284c7;">
                   👁️ Review &amp; Sign Off
                 </a>
               </td>
@@ -88,80 +180,75 @@
       </table>
     </div>
     {% else %}
-      <div class="empty-state-box">
-        <span class="empty-icon">✅</span>
-        <h3>All Clear: No Pending Drafts</h3>
-        <p>No draft reports are currently awaiting regulatory approval. Generate a new report via the search tool below.</p>
-        <a href="{{ url_for('search_explorer') }}" class="btn btn-primary" style="margin-top:0.75rem;">
-          🔍 Open Water Quality Search
+      <div style="padding:2.5rem;text-align:center;">
+        <span style="font-size:2.5rem;">✅</span>
+        <h3 style="font-size:1.15rem;font-weight:700;margin:0.5rem 0 0.25rem;">All Clear: No Pending Drafts</h3>
+        <p style="color:var(--grey-600);margin-bottom:1rem;">No draft reports are currently awaiting regulatory approval.</p>
+        <a href="{{ url_for('search_explorer') }}" class="btn-revenlo-primary" style="display:inline-flex;">
+          Launch Water Quality Search
         </a>
       </div>
     {% endif %}
   </div>
 
-  <!-- Quick Search & Investigation Tool -->
-  <div class="card" style="margin-bottom:1.75rem;">
-    <div class="card-header">
-      <svg viewBox="0 0 24 24" width="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <h2>Launch Regulatory Groundwater Investigation</h2>
-    </div>
-    <div class="card-body" style="padding:1.5rem;">
-      <p style="color:var(--grey-600);margin-bottom:1.25rem;">
-        Search official CGWB monitoring wells across Tamil Nadu districts to inspect chemical parameters, historical sampling dates, and verify ward coverage.
-      </p>
-      <a href="{{ url_for('search_explorer') }}" class="btn btn-green" style="display:inline-flex;align-items:center;gap:0.5rem;">
-        <svg viewBox="0 0 24 24" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Start District Water Investigation
+  <!-- ══════════════════════════════════════════════════════════
+       TABLE CARD 2: RECENT AUDIT DECISIONS LOG
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-table-card">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Recent Audit Decisions Log</h2>
+        <p class="table-subtitle">Official regulatory actions recorded in the transparency trail.</p>
+      </div>
+      <a href="{{ url_for('history') }}" class="btn-table-control" style="text-decoration:none;">
+        <span>View Full History →</span>
       </a>
     </div>
-  </div>
 
-  <!-- Recent Approval History -->
-  <div class="card">
-    <div class="card-header" style="justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:0.5rem;">
-        <svg viewBox="0 0 24 24" width="20"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        <h2>Recent Audit Decisions Log</h2>
-      </div>
-      <a href="{{ url_for('history') }}" class="link-sm">View Full History →</a>
-    </div>
     {% if recent_decisions %}
     <div class="table-scroll">
-      <table class="data-table">
+      <table class="revenlo-table">
         <thead>
           <tr>
             <th>Report ID</th>
-            <th>District / Station</th>
-            <th>Decision</th>
+            <th>District &amp; Station</th>
+            <th>Decision Status</th>
             <th>Audited By</th>
-            <th>Timestamp</th>
+            <th>Decision Timestamp</th>
           </tr>
         </thead>
         <tbody>
           {% for d in recent_decisions %}
             <tr>
               <td><code>{{ d.report_id }}</code></td>
-              <td>{{ d.district }} — {{ d.station }}</td>
+              <td>
+                <div class="cell-main-text">{{ d.district }}</div>
+                <div class="cell-muted-text">{{ d.station }}</div>
+              </td>
               <td>
                 {% if d.approval_status == 'APPROVED' %}
-                  <span class="badge badge-success">✅ APPROVED</span>
+                  <span class="status-pill status-done">Approved</span>
                 {% elif d.approval_status == 'REJECTED' %}
-                  <span class="badge badge-danger">❌ REJECTED</span>
+                  <span class="status-pill status-failed">Rejected</span>
                 {% else %}
-                  <span class="badge badge-warn">⏳ DRAFT</span>
+                  <span class="status-pill status-in-progress">Draft</span>
                 {% endif %}
               </td>
-              <td>{{ d.approved_by or 'System' }}</td>
-              <td>{{ d.approved_at or d.generated_at }}</td>
+              <td style="font-size:0.85rem;color:var(--grey-700);">
+                {{ d.approved_by or 'System' }}
+              </td>
+              <td style="font-size:0.82rem;color:var(--grey-600);">
+                {{ d.approved_at or d.generated_at }}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-      <p class="empty-msg">No audit decisions recorded yet.</p>
+      <p style="padding:1.5rem;color:var(--grey-600);">No audit decisions recorded yet.</p>
     {% endif %}
   </div>
 
-</div>
+</div><!-- /.revenlo-dashboard-wrapper -->
 {% endblock %}

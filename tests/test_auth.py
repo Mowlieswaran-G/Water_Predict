@@ -8,6 +8,7 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
+import uuid
 from src import auth
 
 
@@ -70,3 +71,32 @@ class TestAuthentication:
         )
         assert success is False
         assert "already registered" in msg
+
+    def test_shorthand_role_registration(self):
+        uname = f"inspector_user_{uuid.uuid4().hex[:6]}"
+        success, msg = auth.register_user(
+            username=uname,
+            password="inspectorpass123",
+            full_name="Mr. S. Inspector",
+            role="Inspector"
+        )
+        assert success is True
+        user = auth.get_user(uname)
+        assert user["role"] == "Municipal Quality Inspector"
+
+    def test_login_page_renders_segmented_options_and_no_dummy_user_in_login(self):
+        from app import app
+        client = app.test_client()
+        resp = client.get("/login")
+        assert resp.status_code == 200
+        html = resp.data.decode("utf-8")
+        assert "tabBtnLogin" in html
+        assert "tabBtnRegister" in html
+        assert "Create User" in html
+        assert "roleCardOfficer" in html
+        assert "roleCardInspector" in html
+        assert "roleCardHydrologist" in html
+        assert "roleCardCitizen" in html
+        # Dummy user auto-fill section should not be present
+        assert "Or quick sign in as" not in html
+        assert "demo-role-avatars" not in html

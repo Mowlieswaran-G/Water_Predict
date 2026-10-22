@@ -16,10 +16,14 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Expected location of the CSV
+# Expected location of the CSV files
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 CSV_FILENAME = "tamil_nadu_groundwater_quality_cleaned.csv"
 CSV_PATH = os.path.join(DATA_DIR, CSV_FILENAME)
+
+CLEANED_CSV_PATH = CSV_PATH
+RAW_CSV_PATH = os.path.join(DATA_DIR, "tamil_nadu_groundwater_quality_raw.csv")
+ULB_CSV_PATH = os.path.join(DATA_DIR, "tamil_nadu_ulb_wards.csv")
 
 
 # ---------------------------------------------------------------------------
@@ -32,8 +36,18 @@ def get_csv_path() -> str:
 
 
 def file_exists() -> bool:
-    """Return True if the CSV file is present on disk."""
+    """Return True if the cleaned CSV file is present on disk."""
     return os.path.isfile(CSV_PATH)
+
+
+def raw_file_exists() -> bool:
+    """Return True if the raw CSV file is present on disk."""
+    return os.path.isfile(RAW_CSV_PATH)
+
+
+def ulb_file_exists() -> bool:
+    """Return True if the ULB wards CSV file is present on disk."""
+    return os.path.isfile(ULB_CSV_PATH)
 
 
 def load_csv(path: str | None = None) -> pd.DataFrame:
@@ -86,8 +100,9 @@ def load_csv(path: str | None = None) -> pd.DataFrame:
 def _strip_whitespace(df: pd.DataFrame) -> pd.DataFrame:
     """Strip leading/trailing spaces from string column names and values."""
     df.columns = [c.strip() for c in df.columns]
-    for col in df.select_dtypes(include="object").columns:
-        df[col] = df[col].str.strip()
+    for col in df.select_dtypes(include=["object", "string"]).columns:
+        if df[col].dtype == "object" or str(df[col].dtype).startswith("str"):
+            df[col] = df[col].astype(str).str.strip()
     return df
 
 
@@ -174,3 +189,100 @@ def _find_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
         if name.lower() in lower_map:
             return lower_map[name.lower()]
     return None
+
+
+# ---------------------------------------------------------------------------
+# Raw groundwater dataset and ULB wards loaders
+# ---------------------------------------------------------------------------
+
+def load_raw_csv(path: str | None = None) -> pd.DataFrame:
+    """
+    Load the raw CGWB groundwater quality CSV and return a DataFrame.
+    """
+    target = path or RAW_CSV_PATH
+    if not os.path.isfile(target):
+        raise FileNotFoundError(f"Raw dataset not found at: {target}")
+
+    try:
+        df = pd.read_csv(target, low_memory=False)
+    except Exception as exc:
+        raise ValueError(f"Could not read raw CSV ({target}): {exc}") from exc
+
+    if df.empty:
+        raise ValueError(f"The raw CSV file contains no data rows: {target}")
+
+    return _strip_whitespace(df)
+
+
+def load_ulb_wards(path: str | None = None) -> pd.DataFrame:
+    """
+    Load the Tamil Nadu ULB Wards dataset (125 municipalities).
+    """
+    target = path or ULB_CSV_PATH
+    if not os.path.isfile(target):
+        raise FileNotFoundError(f"ULB wards dataset not found at: {target}")
+
+    try:
+        df = pd.read_csv(target, low_memory=False)
+    except Exception as exc:
+        raise ValueError(f"Could not read ULB CSV ({target}): {exc}") from exc
+
+    if df.empty:
+        raise ValueError(f"The ULB CSV file contains no data rows: {target}")
+
+    return _strip_whitespace(df)
+
+
+def get_ulb_list(path: str | None = None) -> list[dict]:
+    """
+    Return a clean list of ULB dictionaries sorted alphabetically by name.
+    Each item contains name, grade, total_wards, council_general, council_sc,
+    council_st, council_women.
+    """
+    df = load_ulb_wards(path)
+    ulbs = []
+    for _, row in df.iterrows():
+        ulb_name = str(row.get("Name of the ULB", "")).strip()
+        if not ulb_name:
+            continue
+        grade = str(row.get("Grade", "")).strip()
+
+        try:
+            total_wards = int(row.get("Total No. of Wards", 0))
+        except (ValueError, TypeError):
+            total_wards = 0
+
+        def _safe_int(val):
+            if pd.isna(val) or str(val).strip().upper() in ("NA", "NAN", ""):
+                return None
+            try:
+                return int(float(val))
+            except (ValueError, TypeError):
+                return None
+
+        ulbs.append({
+            "name": ulb_name,
+            "grade": grade,
+            "total_wards": total_wards,
+            "council_general": _safe_int(row.get("Strength of the Council-General")),
+            "council_sc": _safe_int(row.get("Strength of the Council-Reserved for-SC")),
+            "council_st": _safe_int(row.get("Strength of the Council-Reserved for-ST")),
+            "council_women": _safe_int(row.get("Strength of the Council-Reserved for-Women")),
+        })
+
+    ulbs.sort(key=lambda x: x["name"].lower())
+    return ulbs
+
+
+def get_ulb_details(ulb_name: str, path: str | None = None) -> dict | None:
+    """
+    Find detailed ULB metadata by municipality name (case-insensitive).
+    """
+    if not ulb_name:
+        return None
+    target = ulb_name.strip().lower()
+    for item in get_ulb_list(path):
+        if item["name"].lower() == target:
+            return item
+    return None
+

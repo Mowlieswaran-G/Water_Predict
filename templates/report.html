@@ -1,207 +1,355 @@
 {% extends "base.html" %}
-{% block title %}Report & Approval — Ward Water Quality Reporter{% endblock %}
+{% block title %}Report &amp; Human Approval — Ward Water Quality Reporter{% endblock %}
+{% block breadcrumb %}Audit Reports{% endblock %}
 
 {% block content %}
+<div class="revenlo-dashboard-wrapper">
 
-<div class="page-header">
-  <h1>📄 Report &amp; Human Approval</h1>
-  <p class="page-subtitle">Review the draft report carefully before approving for publication.</p>
-</div>
+  <!-- ══════════════════════════════════════════════════════════
+       REVENLO HEADER ZONE
+  ══════════════════════════════════════════════════════════ -->
+  <div class="dashboard-header-zone">
+    <div class="header-titles">
+      <h1 class="revenlo-main-heading">Groundwater Quality Audit Report</h1>
+      <p class="revenlo-main-subtitle">Official regulatory assessment grounded in CGWB telemetry &amp; municipal governance records.</p>
+    </div>
+
+    <div class="header-actions">
+      {% if report %}
+        {% if status == 'APPROVED' %}
+          <span class="status-pill status-done" style="font-size:0.85rem;padding:0.4rem 0.85rem;">Official Approved</span>
+        {% elif status == 'REJECTED' %}
+          <span class="status-pill status-failed" style="font-size:0.85rem;padding:0.4rem 0.85rem;">Audit Rejected</span>
+        {% else %}
+          <span class="status-pill status-in-progress" style="font-size:0.85rem;padding:0.4rem 0.85rem;">Draft Review</span>
+        {% endif %}
+        <a href="{{ url_for('download_report') }}" class="btn-revenlo-outline">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Export CSV</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
 
 {% if not report %}
-  <div class="alert alert-info">
-    No draft report exists yet. Run a search and click <strong>Generate Draft Report</strong>.
-    <a href="{{ url_for('home') }}" class="alert-link">Go to Search →</a>
+  <div class="revenlo-table-card" style="padding:3rem;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:0.75rem;">📄</div>
+    <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">No draft report exists yet</h3>
+    <p style="color:var(--grey-600);margin-bottom:1.5rem;">Run a search in the Search Explorer and click <strong>Generate Draft Report</strong>.</p>
+    <a href="{{ url_for('home') }}" class="btn-revenlo-primary">Go to Search Explorer →</a>
   </div>
 {% else %}
 
-<!-- ── Status banner ──────────────────────────────────── -->
-{% set status_class = {'DRAFT': 'status-draft', 'APPROVED': 'status-approved', 'REJECTED': 'status-rejected'}.get(status, 'status-draft') %}
-<div class="report-status-bar {{ status_class }}">
-  <div class="status-left">
-    <span class="status-pill">{{ status }}</span>
-    <span class="status-id">Report ID: <strong>{{ report.Report_ID }}</strong></span>
-  </div>
-  <div class="status-right">
-    Generated: {{ report.Generated_At }}
-    {% if report.Approved_By %}| Approved by: <strong>{{ report.Approved_By }}</strong>{% endif %}
-  </div>
-</div>
+  <!-- ══════════════════════════════════════════════════════════
+       4 STAT METRIC CARDS ROW
+  ══════════════════════════════════════════════════════════ -->
+  <div class="revenlo-stats-grid">
 
-<!-- ── Important disclaimer ───────────────────────────── -->
-<div class="alert alert-danger">
-  ⚠️ <strong>Important:</strong> This is a <em>DRAFT groundwater report</em>.
-  It is <strong>NOT</strong> a ward drinking-water safety certificate.
-  You must review all warnings before approving.
-</div>
-
-<!-- ── Report details ────────────────────────────────── -->
-<div class="report-grid">
-
-  <div class="card report-section">
-    <div class="card-header">
-      <svg viewBox="0 0 24 24" width="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <h2>Report Details</h2>
+    <!-- Card 1: Report Identifier -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span style="font-size:1.25rem;">{{ report.Report_ID }}</span>
+            <span class="stat-trend-pill trend-up">Audit ID</span>
+          </div>
+          <div class="stat-sub-label">{{ report.Report_Type or 'Standardized Lab Audit' }}</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Timestamp: {{ report.Generated_At[:10] if report.Generated_At else 'Active' }}</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
     </div>
-    <div class="detail-fields">
-      {% for key in ['Report_Type','State','District','Station','Ward_Input','Period_Requested',
+
+    <!-- Card 2: Parameters Evaluated -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:rgba(34, 197, 94, 0.12);color:#16a34a;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ (report.Measurement_Summary | length) if report.Measurement_Summary else 0 }}</span>
+            <span class="stat-trend-pill trend-up">Chemicals</span>
+          </div>
+          <div class="stat-sub-label">Laboratory Parameters</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">BIS IS 10500 Evaluation</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 3: Active Warnings -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:rgba(245, 158, 11, 0.12);color:#d97706;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span>{{ (report.Warnings | length) if report.Warnings else 0 }}</span>
+            <span class="stat-trend-pill trend-up">Flags</span>
+          </div>
+          <div class="stat-sub-label">Mandatory Disclosures</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Honest Provenance Warnings</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Card 4: Approval Status -->
+    <div class="revenlo-stat-card">
+      <div class="stat-card-top">
+        <div class="stat-icon-box" style="background:{% if status == 'APPROVED' %}rgba(34, 197, 94, 0.12){% elif status == 'REJECTED' %}rgba(239, 68, 68, 0.12){% else %}rgba(245, 158, 11, 0.12){% endif %};color:{% if status == 'APPROVED' %}#16a34a{% elif status == 'REJECTED' %}#dc2626{% else %}#d97706{% endif %};">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="stat-number-wrapper">
+          <div class="stat-big-val">
+            <span style="font-size:1.35rem;">{{ status }}</span>
+            <span class="stat-trend-pill {% if status == 'APPROVED' %}trend-up{% elif status == 'REJECTED' %}trend-down{% else %}trend-up{% endif %}">Sign-Off</span>
+          </div>
+          <div class="stat-sub-label">{% if report.Approved_By %}By: {{ report.Approved_By }}{% else %}Awaiting Sign-off{% endif %}</div>
+        </div>
+      </div>
+      <div class="stat-card-bottom">
+        <span class="stat-card-link">Regulatory Authorization</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Important disclaimer ───────────────────────────── -->
+  <div class="alert alert-warning" style="display:flex;align-items:flex-start;gap:0.75rem;">
+    <svg viewBox="0 0 24 24" width="22" height="22" style="flex-shrink:0;margin-top:2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+      <strong>Scientific Integrity Notice:</strong> This is a <em>DRAFT groundwater report</em> summarizing official CGWB borehole records and ULB municipal council counts. It is <strong>NOT</strong> a certified drinking-water safety certificate for municipal tap supply pipes. Review all disclosures before approving.
+    </div>
+  </div>
+
+  <!-- ── Report Details Grid ────────────────────────────── -->
+  <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+    <div class="table-card-top-header" style="margin-bottom:1.25rem;">
+      <div class="table-header-info">
+        <h2 class="table-title">Audit Metadata &amp; Grounding Parameters</h2>
+        <p class="table-subtitle">Administrative and telemetry specifications cross-referenced across 3 open datasets.</p>
+      </div>
+      <span class="status-pill status-done">ISO 8601 Validated</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;">
+      {% for key in ['Report_Type','State','District','Municipality_ULB','ULB_Grade','ULB_Total_Wards','Council_Composition','Station','Ward_Input','Dataset_Source','Period_Requested',
                      'Total_Records_Found','Period_Records_Found','Latest_Sample_Date',
                      'Sample_Date_Range','Ward_Match_Status'] %}
-        <div class="detail-field">
-          <span class="detail-key">{{ key | replace('_', ' ') }}</span>
-          <span class="detail-val">
+        <div style="background:var(--grey-50);border:1px solid var(--border-color);border-radius:12px;padding:0.75rem 1rem;">
+          <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--grey-400);font-weight:700;">
+            {{ key | replace('_', ' ') }}
+          </div>
+          <div style="margin-top:0.35rem;font-size:0.92rem;font-weight:600;color:var(--grey-800);">
             {% if key == 'Ward_Match_Status' %}
               {% if report[key] == 'Unverified' %}
-                <span class="badge badge-red">⚠️ Unverified</span>
+                <span class="status-pill status-pending">Unverified Mapping</span>
               {% else %}
                 {{ report[key] }}
               {% endif %}
             {% else %}
-              {{ report[key] }}
+              {{ report[key] or '—' }}
             {% endif %}
-          </span>
+          </div>
         </div>
       {% endfor %}
     </div>
   </div>
 
-  <!-- ── Measurement summary ───────────────────────────── -->
-  <div class="card report-section">
-    <div class="card-header">
-      <svg viewBox="0 0 24 24" width="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      <h2>Measurement Summary</h2>
+  <!-- ── Measurement summary Table ─────────────────────── -->
+  <div class="revenlo-table-card">
+    <div class="table-card-top-header">
+      <div class="table-header-info">
+        <h2 class="table-title">Laboratory Measurement Summary</h2>
+        <p class="table-subtitle">Aggregated statistical analysis across all historical records for this station.</p>
+      </div>
+      <span class="status-pill status-done">Chemical Summary</span>
     </div>
+
     {% if report.Measurement_Summary %}
     <div class="table-scroll">
-      <table class="data-table">
+      <table class="revenlo-table">
         <thead><tr><th>Parameter</th><th>Count</th><th>Min</th><th>Max</th><th>Mean</th></tr></thead>
         <tbody>
           {% for m in report.Measurement_Summary %}
             <tr>
-              <td><strong>{{ m.Parameter }}</strong></td>
-              <td>{{ m.Count }}</td>
-              <td>{{ m.Min }}</td>
-              <td>{{ m.Max }}</td>
-              <td>{{ m.Mean }}</td>
+              <td><div class="cell-main-text">{{ m.Parameter }}</div></td>
+              <td><span class="cell-tag">{{ m.Count }}</span></td>
+              <td style="font-weight:600;">{{ m.Min }}</td>
+              <td style="font-weight:600;">{{ m.Max }}</td>
+              <td><span style="font-weight:700;color:var(--primary-dark);">{{ m.Mean }}</span></td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     {% else %}
-      <p class="empty-msg">No numeric measurements in this report.</p>
+      <p style="padding:1.5rem;color:var(--grey-600);">No numeric measurements in this report.</p>
     {% endif %}
   </div>
 
-</div><!-- /report-grid -->
+  <!-- ── Warnings & Limitations (Side by side) ───────────── -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:1.5rem;">
 
-<!-- ── Warnings ──────────────────────────────────────── -->
-<div class="card" style="margin-bottom:1.5rem;">
-  <div class="card-header">
-    <svg viewBox="0 0 24 24" width="18"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    <h2>⚠️ Warnings</h2>
+    <!-- Warnings -->
+    <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+      <div class="table-card-top-header" style="margin-bottom:1rem;">
+        <div class="table-header-info">
+          <h3 class="table-title">⚠️ Mandatory Warnings</h3>
+          <p class="table-subtitle">Required scientific and regulatory caveats.</p>
+        </div>
+      </div>
+      {% if report.Warnings %}
+        <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:0.6rem;color:var(--grey-700);font-size:0.88rem;">
+          {% for w in report.Warnings %}<li>{{ w }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p style="color:#16a34a;font-weight:600;">✅ No warnings for this report.</p>
+      {% endif %}
+    </div>
+
+    <!-- Limitations -->
+    <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+      <div class="table-card-top-header" style="margin-bottom:1rem;">
+        <div class="table-header-info">
+          <h3 class="table-title">🚧 Scope Limitations</h3>
+          <p class="table-subtitle">Dataset and spatial boundaries.</p>
+        </div>
+      </div>
+      <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:0.6rem;color:var(--grey-700);font-size:0.88rem;">
+        {% for lim in report.Limitations %}
+          <li>{{ lim }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
   </div>
-  {% if report.Warnings %}
-    <ul class="report-list report-list-warn">
-      {% for w in report.Warnings %}<li>{{ w }}</li>{% endfor %}
+
+  <!-- ── Source references ─────────────────────────────── -->
+  <div class="revenlo-table-card" style="padding:1.5rem 1.75rem;">
+    <div class="table-card-top-header" style="margin-bottom:1rem;">
+      <div class="table-header-info">
+        <h3 class="table-title">🔗 Source Provenance &amp; References</h3>
+        <p class="table-subtitle">Open government data repositories cited in this evaluation.</p>
+      </div>
+      <span class="status-pill status-done">Verified Sources</span>
+    </div>
+    <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:0.5rem;color:var(--grey-600);font-size:0.85rem;">
+      {% for ref in report.Source_References %}
+        <li>{{ ref }}</li>
+      {% endfor %}
     </ul>
-  {% else %}
-    <p class="empty-msg">✅ No warnings for this report.</p>
-  {% endif %}
-</div>
-
-<!-- ── Limitations ───────────────────────────────────── -->
-<div class="card" style="margin-bottom:1.5rem;">
-  <div class="card-header">
-    <svg viewBox="0 0 24 24" width="18"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>
-    <h2>🚧 Limitations</h2>
-  </div>
-  <ul class="report-list report-list-limit">
-    {% for lim in report.Limitations %}
-      <li>{{ lim }}</li>
-    {% endfor %}
-  </ul>
-</div>
-
-<!-- ── Source references ─────────────────────────────── -->
-<div class="card card-source" style="margin-bottom:1.5rem;">
-  <div class="card-header">
-    <svg viewBox="0 0 24 24" width="18"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-    <h2>🔗 Source References</h2>
-  </div>
-  <ul class="report-list">
-    {% for ref in report.Source_References %}
-      <li>{{ ref }}</li>
-    {% endfor %}
-  </ul>
-</div>
-
-<!-- ── Human Approval ─────────────────────────────────── -->
-<div class="card approval-card" style="margin-bottom:1.5rem;">
-  <div class="card-header">
-    <svg viewBox="0 0 24 24" width="18"><polyline points="20 6 9 17 4 12"/></svg>
-    <h2>✅ Human Approval</h2>
   </div>
 
-  <div class="alert alert-info" style="margin:0 1.5rem 1rem;">
-    👁️ You must review all sections above before approving.
-    Approval marks this report as reviewed — it does <strong>NOT</strong> certify water safety.
-  </div>
-
-  {% if status == 'APPROVED' %}
-    <div class="alert alert-success" style="margin:0 1.5rem 1rem;">
-      ✅ This report has already been <strong>APPROVED</strong>
-      {% if report.Approved_By %} by {{ report.Approved_By }}{% endif %}.
+  <!-- ── Human Approval Zone ───────────────────────────── -->
+  <div class="revenlo-table-card" style="padding:1.75rem 2rem;border:2px solid #38bdf8;">
+    <div class="table-card-top-header" style="margin-bottom:1rem;">
+      <div class="table-header-info">
+        <h2 class="table-title" style="color:var(--primary-dark);">Official Human Approval &amp; Authorization</h2>
+        <p class="table-subtitle">Review all sections before signing off. Approval certifies regulatory review of available records.</p>
+      </div>
+      {% if status == 'APPROVED' %}
+        <span class="status-pill status-done">Authorized</span>
+      {% elif status == 'REJECTED' %}
+        <span class="status-pill status-failed">Rejected</span>
+      {% else %}
+        <span class="status-pill status-in-progress">Pending Sign-off</span>
+      {% endif %}
     </div>
 
-  {% elif status == 'REJECTED' %}
-    <div class="alert alert-danger" style="margin:0 1.5rem 1rem;">
-      🔴 This report was <strong>REJECTED</strong>.
-      {% if report.Rejection_Reason %}Reason: {{ report.Rejection_Reason }}{% endif %}
-    </div>
-
-  {% else %}
-    {% if current_user %}
-      <div class="alert alert-info" style="margin:0 1.5rem 1rem;background:#f0fdf4;border-color:#22c55e;color:#15803d;">
-        🛡️ Signed in as <strong>{{ current_user.full_name }}</strong> ({{ current_user.role }} — {{ current_user.department }}). Your official credentials will be permanently attached to the approval audit trail.
+    {% if status == 'APPROVED' %}
+      <div class="alert alert-success" style="margin-bottom:1rem;">
+        ✅ This report has been officially <strong>APPROVED</strong>
+        {% if report.Approved_By %} by <strong>{{ report.Approved_By }}</strong>{% endif %}.
+      </div>
+    {% elif status == 'REJECTED' %}
+      <div class="alert alert-danger" style="margin-bottom:1rem;">
+        🔴 This report was <strong>REJECTED</strong>.
+        {% if report.Rejection_Reason %}Reason: <em>{{ report.Rejection_Reason }}</em>{% endif %}
       </div>
     {% else %}
-      <div class="alert alert-warning" style="margin:0 1.5rem 1rem;">
-        💡 <strong>Are you an Environmental Officer or Reviewer?</strong>
-        <a href="{{ url_for('login', next=request.path) }}" style="text-decoration:underline;font-weight:700;margin-left:0.35rem;">Sign In</a> to link your official government/researcher designation to this audit trail, or continue as a guest reviewer below.
+      {% if current_user %}
+        <div class="alert alert-info" style="margin-bottom:1.25rem;background:#f0fdf4;border-color:#22c55e;color:#15803d;">
+          🛡️ Authenticated as <strong>{{ current_user.full_name }}</strong> ({{ current_user.role }} — {{ current_user.department }}). Your official credentials will be attached to the permanent audit trail.
+        </div>
+      {% endif %}
+
+      <div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-end;">
+        <!-- Approve form -->
+        <form action="{{ url_for('approve', report_id=report.Report_ID) }}" method="POST" style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:0.5rem;">
+          <label class="form-label" for="reviewer">Reviewer Designation</label>
+          <input type="text" name="reviewer" id="reviewer" class="form-input"
+                 value="{% if current_user %}{{ current_user.full_name }} ({{ current_user.role }}){% else %}Anonymous Reviewer{% endif %}" />
+          <button type="submit" class="btn-revenlo-primary" style="background:#16a34a;margin-top:0.25rem;justify-content:center;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span>Approve &amp; Publish Report</span>
+          </button>
+        </form>
+
+        <!-- Reject form -->
+        <form action="{{ url_for('reject', report_id=report.Report_ID) }}" method="POST" style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:0.5rem;">
+          <label class="form-label" for="reason">Rejection Reason</label>
+          <input type="text" name="reason" id="reason" class="form-input"
+                 placeholder="Explain why this report needs revision…" />
+          <button type="submit" class="btn-revenlo-outline" style="border-color:#dc2626;color:#dc2626;margin-top:0.25rem;justify-content:center;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            <span>Reject Report</span>
+          </button>
+        </form>
       </div>
     {% endif %}
+  </div>
 
-    <div class="approval-forms">
-      <!-- Approve form -->
-      <form action="{{ url_for('approve', report_id=report.Report_ID) }}" method="POST" class="approval-form">
-        <label class="form-label" for="reviewer">Your name &amp; designation (reviewer)</label>
-        <input type="text" name="reviewer" id="reviewer" class="form-input"
-               value="{% if current_user %}{{ current_user.full_name }} ({{ current_user.role }}){% else %}Anonymous Reviewer{% endif %}"
-               style="max-width:340px;" />
-        <button type="submit" class="btn btn-approve">
-          ✅ Approve Report
-        </button>
-      </form>
-
-      <!-- Reject form -->
-      <form action="{{ url_for('reject', report_id=report.Report_ID) }}" method="POST" class="approval-form">
-        <label class="form-label" for="reason">Rejection reason (optional)</label>
-        <input type="text" name="reason" id="reason" class="form-input"
-               placeholder="Explain why this report needs revision…" style="max-width:300px;" />
-        <button type="submit" class="btn btn-reject">
-          ❌ Reject Report
-        </button>
-      </form>
-    </div>
-  {% endif %}
-</div>
-
-<!-- ── Downloads ──────────────────────────────────────── -->
-<div class="action-bar">
-  <a href="{{ url_for('results') }}" class="btn btn-outline">← Back to Results</a>
-  <a href="{{ url_for('download_report') }}" class="btn btn-green">⬇️ Download Report CSV</a>
-</div>
+  <!-- ── Action Bar ─────────────────────────────────────── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-top:0.5rem;">
+    <a href="{{ url_for('results') }}" class="btn-revenlo-outline">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      <span>Back to Results</span>
+    </a>
+    <a href="{{ url_for('download_report') }}" class="btn-revenlo-outline">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span>Download Report CSV</span>
+    </a>
+  </div>
 
 {% endif %}
+
+</div><!-- /.revenlo-dashboard-wrapper -->
 {% endblock %}

@@ -34,6 +34,7 @@ from src import (
     report_generator,
     approval,
     auth,
+    water_standards,
 )
 
 # ---------------------------------------------------------------------------
@@ -69,6 +70,8 @@ def inject_user():
 # ---------------------------------------------------------------------------
 _CACHED_DF: pd.DataFrame | None = None
 _CACHED_PROFILE: analysis.DatasetProfile | None = None
+_CACHED_RAW_DF: pd.DataFrame | None = None
+_CACHED_ULBS: list[dict] | None = None
 _LOAD_ERROR: str | None = None
 
 
@@ -94,6 +97,35 @@ def _get_data() -> tuple[pd.DataFrame | None, analysis.DatasetProfile | None, st
         _LOAD_ERROR = str(exc)
         return None, None, _LOAD_ERROR
     return _CACHED_DF, _CACHED_PROFILE, None
+
+
+def _get_raw_data() -> pd.DataFrame | None:
+    global _CACHED_RAW_DF
+    if _CACHED_RAW_DF is not None:
+        return _CACHED_RAW_DF
+    if data_loader.raw_file_exists():
+        try:
+            _CACHED_RAW_DF = data_loader.load_raw_csv()
+            logger.info("Raw CGWB dataset loaded: %d rows", len(_CACHED_RAW_DF))
+        except Exception as exc:
+            logger.warning("Could not load raw dataset: %s", exc)
+    return _CACHED_RAW_DF
+
+
+def _get_ulbs() -> list[dict]:
+    global _CACHED_ULBS
+    if _CACHED_ULBS is not None:
+        return _CACHED_ULBS
+    if data_loader.ulb_file_exists():
+        try:
+            _CACHED_ULBS = data_loader.get_ulb_list()
+            logger.info("ULB wards dataset loaded: %d municipalities", len(_CACHED_ULBS))
+        except Exception as exc:
+            logger.warning("Could not load ULB dataset: %s", exc)
+            _CACHED_ULBS = []
+    else:
+        _CACHED_ULBS = []
+    return _CACHED_ULBS
 
 
 # ---------------------------------------------------------------------------
@@ -195,10 +227,16 @@ def search_explorer():
         data_loader.get_districts(df, profile.district_col)
         if profile.district_col else []
     )
+    ulbs = _get_ulbs()
+    raw_df = _get_raw_data()
+
     return render_template(
         "home.html",
         districts=districts,
+        ulbs=ulbs,
         total_rows=profile.total_rows,
+        raw_rows=len(raw_df) if raw_df is not None else 0,
+        ulb_count=len(ulbs),
         param_count=len(profile.param_cols),
         param_cols=profile.param_cols,
     )
@@ -219,19 +257,30 @@ def stations_ajax():
     return jsonify({"stations": stations})
 
 
+@app.route("/api/ulbs")
+def ulbs_api():
+    """AJAX endpoint: return all 125 Tamil Nadu Urban Local Bodies (Municipalities)."""
+    return jsonify({"ulbs": _get_ulbs()})
+
+
 @app.route("/search", methods=["POST"])
 def search():
     df, profile, error = _get_data()
     if error:
         return render_template("error.html", error=error), 503
 
-    district   = request.form.get("district", "").strip()
-    station    = request.form.get("station", "").strip()
-    ward_input = request.form.get("ward_input", "").strip()
-    period     = request.form.get("period", "All available")
+    district     = request.form.get("district", "").strip()
+    station      = request.form.get("station", "").strip()
+    ulb_name     = request.form.get("ulb_name", "").strip()
+    ward_input   = request.form.get("ward_input", "").strip()
+    dataset_mode = request.form.get("dataset_mode", "cleaned").strip().lower()
+    period       = request.form.get("period", "All available")
     custom_start_str = request.form.get("custom_start", "")
     custom_end_str   = request.form.get("custom_end", "")
     selected_params_raw = request.form.getlist("params")
+
+    # Fetch municipality details from dataset 3
+    ulb_details = data_loader.get_ulb_details(ulb_name) if ulb_name else None
 
     # Parse custom dates
     from datetime import date
@@ -243,7 +292,7 @@ def search():
         except ValueError:
             pass
 
-    # Validate
+    # Validate inputs
     valid, err = validation.validate_search_inputs(district, station)
     if not valid:
         flash(err, "error")
@@ -265,6 +314,13 @@ def search():
         custom_end=custom_end,
     )
 
+    # If ULB was provided, note transparent caveat
+    if ulb_details:
+        result["warnings"].append(
+            f"ℹ️ Selected Municipality: {ulb_details['name']} ({ulb_details['grade']} Grade, {ulb_details['total_wards']} Wards). "
+            "CGWB stations are groundwater exploratory wells; municipal ward boundaries are not officially mapped in CGWB data."
+        )
+
     # Store result in session (serialise records to JSON)
     records_json = result["records"].to_json(orient="split", date_format="iso")
     session["search_result_meta"] = {
@@ -278,6 +334,9 @@ def search():
         "parsed_date_col": result["parsed_date_col"],
         "district":        district,
         "station":         station,
+        "ulb_name":        ulb_name,
+        "ulb_details":     ulb_details,
+        "dataset_mode":    dataset_mode,
         "ward_input":      ward_input,
         "period":          period,
     }
@@ -318,6 +377,30 @@ def results():
 
     display_df = records[display_cols] if display_cols and not records.empty else records
 
+    # Evaluate chemical parameters for sample using BIS IS 10500:2012 standards
+    evaluated_params_list = []
+    stat_counts = {"total": 0, "acceptable": 0, "permissible": 0, "exceeded": 0, "advisory": 0, "missing": 0}
+    if not records.empty:
+        first_row_dict = records.iloc[0].to_dict()
+        evaluated_params_list = water_standards.evaluate_sample_parameters(
+            first_row_dict, meta["param_cols_used"]
+        )
+        stat_counts = {
+            "total": len(evaluated_params_list),
+            "acceptable": sum(1 for p in evaluated_params_list if p["status"] == "acceptable"),
+            "permissible": sum(1 for p in evaluated_params_list if p["status"] == "permissible"),
+            "exceeded": sum(1 for p in evaluated_params_list if p["status"] == "exceeded"),
+            "advisory": sum(1 for p in evaluated_params_list if p["status"] == "advisory"),
+            "missing": sum(1 for p in evaluated_params_list if p["status"] == "missing"),
+        }
+
+    # Fetch corresponding raw records from Dataset 2 for side-by-side comparison
+    raw_df = _get_raw_data()
+    raw_records_map = {}
+    if raw_df is not None and not records.empty and "_id" in records.columns:
+        subset_raw = raw_df[raw_df["_id"].isin(records["_id"])].set_index("_id")
+        raw_records_map = subset_raw.to_dict(orient="index")
+
     # Measurement summary
     summary = analysis.summarise_measurements(records, meta["param_cols_used"])
 
@@ -334,6 +417,12 @@ def results():
         columns=display_df.columns.tolist(),
         summary=summary.to_dict(orient="records"),
         missing=missing_rpt.to_dict(orient="records"),
+        evaluated_params=evaluated_params_list,
+        stat_counts=stat_counts,
+        raw_records_map=raw_records_map,
+        ulb_name=meta.get("ulb_name"),
+        ulb_details=meta.get("ulb_details"),
+        dataset_mode=meta.get("dataset_mode", "cleaned"),
         row_count=len(records),
     )
 
@@ -357,17 +446,20 @@ def detail(row_idx: int):
         return redirect(url_for("results"))
 
     row = records.iloc[row_idx]
+    row_dict = row.to_dict()
 
-    # Build measurement rows
-    meas_rows = []
-    for col in meta["param_cols_used"]:
-        raw_val = row.get(col)
-        valid, disp = validation.validate_measurement_value(raw_val)
-        meas_rows.append({
-            "parameter": col,
-            "value": disp if valid else "Not available",
-            "status": "ok" if valid else "missing",
-        })
+    # Build measurement rows evaluated against BIS standards
+    evaluated_params = water_standards.evaluate_sample_parameters(
+        row_dict, meta["param_cols_used"]
+    )
+
+    # Fetch raw row for direct comparison
+    raw_df = _get_raw_data()
+    raw_row = None
+    if raw_df is not None and "_id" in row and not pd.isna(row["_id"]):
+        matching = raw_df[raw_df["_id"] == row["_id"]]
+        if not matching.empty:
+            raw_row = matching.iloc[0].to_dict()
 
     # Source evidence
     prov_cols = profile.provenance_cols
@@ -385,7 +477,7 @@ def detail(row_idx: int):
 
     return render_template(
         "detail.html",
-        row=row.to_dict(),
+        row=row_dict,
         row_idx=row_idx,
         total_rows=len(records),
         district=row.get(profile.district_col, "N/A") if profile.district_col else "N/A",
@@ -393,7 +485,11 @@ def detail(row_idx: int):
         raw_date=raw_date,
         age_label=age_label,
         is_historical=is_hist,
-        meas_rows=meas_rows,
+        evaluated_params=evaluated_params,
+        raw_row=raw_row,
+        ulb_name=meta.get("ulb_name"),
+        ulb_details=meta.get("ulb_details"),
+        dataset_mode=meta.get("dataset_mode", "cleaned"),
         evidence=evidence,
         source_warnings=source_warnings,
         ward_match=meta["ward_match"],
@@ -435,6 +531,9 @@ def generate_report():
         total_found=meta.get("total_found", 0),
         period_found=meta.get("period_found", 0),
         parsed_date_col=meta.get("parsed_date_col"),
+        ulb_name=meta.get("ulb_name"),
+        ulb_details=meta.get("ulb_details"),
+        dataset_mode=meta.get("dataset_mode", "cleaned"),
     )
     approval.save_draft(draft)
     session["draft_report_id"] = report_id
@@ -531,12 +630,13 @@ def login():
                 target = role_url
             return redirect(target)
         else:
-            flash("⛔ Invalid username or password. Please verify your credentials or select a quick demo account below.", "error")
+            flash("⛔ Invalid username or password. Please verify your credentials or create a new user account.", "error")
             return render_template("login.html", active_tab="login", next_url=next_url)
 
 
     # GET request
-    return render_template("login.html", active_tab="login", next_url=next_url)
+    active_tab = request.args.get("tab", "login")
+    return render_template("login.html", active_tab=active_tab, next_url=next_url)
 
 
 @app.route("/logout")
