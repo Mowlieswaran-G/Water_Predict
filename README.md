@@ -2,14 +2,16 @@
 
 > **A Transparent, Honest Groundwater Telemetry & Multi-Role Governance Platform for Tamil Nadu.**  
 > Built for institutional transparency, data-backed environmental accountability, and citizen access.  
-> **Official Data Source:** Central Ground Water Board (CGWB), Ministry of Jal Shakti, Government of India.
+> **Official Data Source:** Central Ground Water Board (CGWB), Ministry of Jal Shakti, Government of India.  
+> 🌐 **Live Production URL:** [https://ward-water-quality-reporter.onrender.com](https://ward-water-quality-reporter.onrender.com)
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7?logo=render&logoColor=white)](https://ward-water-quality-reporter.onrender.com)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0+-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docker.com)
 [![Pytest](https://img.shields.io/badge/Tests-88%20Passed-44cc11?logo=pytest&logoColor=white)](https://pytest.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Theme](https://img.shields.io/badge/UI-Dark%20%26%20Light%20Modes-0284c7)](#-revenlo-saas-design-system)
+[![Theme](https://img.shields.io/badge/UI-Dark%20%26%20Light%20Modes-0284c7)](#-key-features)
 
 ---
 
@@ -134,9 +136,16 @@ Water_Predict/
 
 ---
 
-## ⚡ Quick Start Guide
+## ⚡ Quick Start & Access
 
-### Option 1: Docker (Recommended)
+### 🌐 Option 1: Live Cloud Production (Instant Access)
+
+The platform is deployed and live on Render:  
+👉 **[https://ward-water-quality-reporter.onrender.com](https://ward-water-quality-reporter.onrender.com)**
+
+---
+
+### Option 2: Docker (Local Production Container)
 
 Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is running, then run:
 
@@ -154,7 +163,7 @@ docker compose down
 
 ---
 
-### Option 2: Local Python Environment
+### Option 3: Local Python Environment
 
 1. **Clone the repository and enter the directory**:
    ```bash
