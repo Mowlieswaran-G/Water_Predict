@@ -1,280 +1,249 @@
-# 💧 Ward Water Quality Reporter
+# 💧 Ward Water Quality Reporter (WardWater)
 
-> A transparent, honest groundwater quality search tool built for a college hackathon.
-> Data source: Central Ground Water Board (CGWB), Tamil Nadu.
+> **A Transparent, Honest Groundwater Telemetry & Multi-Role Governance Platform for Tamil Nadu.**  
+> Built for institutional transparency, data-backed environmental accountability, and citizen access.  
+> **Official Data Source:** Central Ground Water Board (CGWB), Ministry of Jal Shakti, Government of India.
 
----
-
-## 🔰 What This Project Does
-
-The **Ward Water Quality Reporter** lets people look up groundwater quality records for
-their area. It pulls data from an official cleaned CSV and shows exactly what measurements
-exist, when they were taken, where they came from, and what is missing.
-
-It **never invents** a measurement, date, ward link, or safety claim.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docker.com)
+[![Pytest](https://img.shields.io/badge/Tests-88%20Passed-44cc11?logo=pytest&logoColor=white)](https://pytest.org)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Theme](https://img.shields.io/badge/UI-Dark%20%26%20Light%20Modes-0284c7)](#-revenlo-saas-design-system)
 
 ---
 
-## 🚨 Problem It Solves
+## 🌟 Overview & Core Philosophy
 
-People often don't know:
-- What water-quality data exists for their area.
-- How old the data is.
-- Whether a monitoring station is actually linked to their ward.
-- What the data limitations are.
+The **Ward Water Quality Reporter** enables residents, field inspectors, hydrologists, and environmental officers to inspect official groundwater quality telemetry across Tamil Nadu's districts and Urban Local Bodies (ULBs).
 
-This tool shows all of that honestly, with source evidence and human approval before any
-report is published.
-
----
-
-## 🛠️ Technology Used
-
-| Tool | Purpose |
-|------|---------|
-| Python 3.11+ | Application core logic & data science |
-| Flask 3.0+ | Modern web framework & REST endpoints |
-| Docker & Docker Compose | Containerization & production deployment |
-| Gunicorn | Production WSGI HTTP server |
-| Pandas | CSV loading and high-performance data processing |
-| SQLite | Storing report approval history |
-| Pytest | Automated test suite (75 passed tests) |
-| Plotly & Chart.js | Visual charts and water parameter trends |
-| FPDF2 | Automated PDF report export |
+Unlike generic portals, this platform enforces a strict **Truth-in-Data** standard:
+- **Never invents data**: If a parameter, date, or station link does not exist in the official dataset, it is explicitly reported as unavailable.
+- **Accurate Historical Labelling**: Any water sample collected more than **365 days ago** is prominently flagged with a warning badge showing the exact collection date and sample age.
+- **Unverified Ward Match Disclaimer**: Because CGWB wells monitor regional aquifers rather than municipal tap pipelines, ward-level associations are explicitly labeled as *Unverified Approximation*.
+- **Mandatory Human Approval**: No regulatory compliance report can be published without explicit sign-off by a designated Environmental Officer.
 
 ---
 
-## 📁 Folder Structure
+## 🚀 Key Features
+
+### 1. 📊 Three Integrated Datasets
+- **Cleaned Groundwater Telemetry (`data/tamil_nadu_groundwater_quality_cleaned.csv`)**: 1,189 verified CGWB records across 31 districts, tracking 41 physical and chemical parameters (pH, TDS, Nitrate, Fluoride, Chloride, Hardness, Heavy Metals).
+- **Raw Station Telemetry (`data/tamil_nadu_groundwater_quality_raw.csv`)**: 1,223 raw station telemetry records with original parameter codes and field notes.
+- **Tamil Nadu ULB / Ward Directory (`data/tamil_nadu_ulb_wards.csv`)**: 25 Urban Local Bodies categorized by administrative type (Municipal Corporations, Municipalities, Town Panchayats).
+
+### 2. 👥 Role-Based Governance (RBAC)
+Dedicated authenticated dashboards tailored for each stakeholder:
+- ⚖️ **Environmental Officer** (`/dashboard/officer`): Audit draft telemetry reports, conduct compliance reviews, and issue official publication approvals.
+- 🏛️ **Municipal Quality Inspector** (`/dashboard/inspector`): Monitor ward contamination flags, schedule on-site inspections, and audit supply safety.
+- 🧪 **Senior Hydrologist** (`/dashboard/hydrologist`): Analyze aquifer chemical trends, CGWB well metrics, depth telemetry, and seasonal salinity shifts.
+- 👥 **Public Citizen / Researcher** (`/dashboard/citizen`): Search open groundwater records, review approved ward water reports, and submit citizen inquiries.
+
+### 3. 🎨 Modern SaaS Design System (Dark & Light Theme)
+- Full support for both **Light Mode** and **Dark Mode** with instant theme toggling and `localStorage` persistence.
+- Executive sidebar navigation with quick search, collapsible toggle, and live user status badges.
+- **Split-Screen Authentication**: Full-bleed cosmic water telemetry visual on the left paired with a clean white-theme login and registration form on the right.
+
+### 4. 🔬 Scientific Water Quality Standards & Normalization
+- Built-in BIS (Bureau of Indian Standards IS 10500:2012) and WHO drinking water guideline limits (`src/water_standards.py`).
+- Automated, safe unit normalization (`1 mg/L = 1,000 µg/L`) with strict guards preventing non-concentration units (like pH) from invalid conversion.
+- One-click export to official **PDF** and **CSV** formats.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| **Core & Logic** | Python 3.11+, Pandas, NumPy |
+| **Web Framework** | Flask 3.0+, Jinja2, Werkzeug Security |
+| **WSGI Server** | Gunicorn (Multi-worker production server) |
+| **Data Storage** | SQLite3 (`outputs/reports.db` for approval audit logs & user accounts) |
+| **Data Sources** | Central Ground Water Board (CGWB) & TN Urban Development CSVs |
+| **Visualization** | Chart.js, Plotly, Custom SVG Telemetry Gauges |
+| **Export Engine** | FPDF2 for automated regulatory PDF generation |
+| **Containerization**| Docker, Docker Compose |
+| **Testing** | Pytest (88 unit and integration tests) |
+
+---
+
+## 📁 Repository Structure
 
 ```
 Water_Predict/
-├── app.py                  ← Flask web application entry point
-├── Dockerfile              ← Production Docker container specification
-├── docker-compose.yml      ← Container orchestration & volume mapping
-├── .dockerignore           ← Container build exclusions
-├── requirements.txt        ← Python package list
-├── README.md               ← Documentation & guide
-├── .gitignore
+├── app.py                            # Flask application controller & routes
+├── Dockerfile                        # Production Docker container definition
+├── docker-compose.yml                # Docker Compose config with live volume mounts
+├── requirements.txt                  # Python dependency specifications
+├── README.md                         # Project documentation
 │
-├── data/
-│   └── tamil_nadu_groundwater_quality_cleaned.csv  ← Official CGWB dataset
+├── data/                             # Official datasets
+│   ├── tamil_nadu_groundwater_quality_cleaned.csv   # Cleaned CGWB dataset (1,189 records)
+│   ├── tamil_nadu_groundwater_quality_raw.csv       # Raw CGWB station telemetry (1,223 records)
+│   └── tamil_nadu_ulb_wards.csv                     # Tamil Nadu ULB & Ward directory
 │
-├── src/
+├── src/                              # Core processing modules
 │   ├── __init__.py
-│   ├── data_loader.py       ← Load and inspect the CSV
-│   ├── validation.py        ← Check columns, inputs, ward match
-│   ├── filtering.py         ← Filter by district, station, date, parameter
-│   ├── date_utils.py        ← Parse dates, label historical samples
-│   ├── normalization.py     ← Convert mg/L ↔ µg/L
-│   ├── source_verification.py ← Track provenance of every result
-│   ├── analysis.py          ← Main search pipeline
-│   ├── report_generator.py  ← Build draft reports & PDF generator
-│   └── approval.py          ← SQLite-backed approval workflow
+│   ├── analysis.py                   # Search pipeline, summary computation & metrics
+│   ├── approval.py                   # SQLite approval workflow & audit trail
+│   ├── auth.py                       # User management, salted password hashes & RBAC
+│   ├── data_loader.py                # Multi-dataset loader & dynamic column inspection
+│   ├── date_utils.py                 # Historical sample age computation & ISO date parser
+│   ├── filtering.py                  # District, station, date range, and parameter filters
+│   ├── normalization.py              # Unit conversions (mg/L ↔ µg/L) & guardrails
+│   ├── report_generator.py           # Draft report builder & automated PDF generator
+│   ├── source_verification.py        # Provenance, dataset metadata & limitation tracking
+│   ├── validation.py                 # Column validation, input sanitation & ward checks
+│   └── water_standards.py            # BIS IS 10500 & WHO permissible limits database
 │
 ├── static/
-│   ├── css/style.css        ← Modern responsive styling & design tokens
-│   ├── js/app.js            ← Dynamic frontend filters, charts & search logic
-│   └── img/                 ← Static images & assets
+│   ├── css/
+│   │   └── style.css                 # Main stylesheet (Design tokens, Dark/Light modes)
+│   ├── js/
+│   │   └── app.js                    # Dynamic frontend filtering, charts & search logic
+│   └── img/
+│       └── login_showcase.jpg        # Telemetry crystal visual for login showcase
 │
 ├── templates/
-│   ├── base.html            ← Base layout with navigation and footer
-│   ├── index.html           ← Search & live water quality exploration dashboard
-│   ├── report.html          ← Draft report view & approval flow
-│   ├── approvals.html       ← Approved report history & audit trail
-│   └── about.html           ← Methodology, CGWB sources & honest limitations
+│   ├── base.html                     # Main shell with sidebar, topbar & theme controls
+│   ├── home.html                     # Search explorer & multi-dataset browser
+│   ├── login.html                    # White-theme split-screen login & registration
+│   ├── report.html                   # Draft water quality report & approval flow
+│   ├── results.html                  # Search query result tables & telemetry gauges
+│   ├── history.html                  # Historical sample tracking & trend comparisons
+│   ├── detail.html                   # Station drill-down & parameter analysis
+│   ├── error.html                    # User-friendly error templates
+│   └── dashboards/                   # Dedicated role-based portals
+│       ├── officer.html              # Environmental Officer dashboard
+│       ├── inspector.html            # Municipal Quality Inspector dashboard
+│       ├── hydrologist.html          # Senior Hydrologist analytics dashboard
+│       └── citizen.html              # Public Citizen & community research portal
 │
-├── tests/
+├── tests/                            # Automated test suite (88 tests)
 │   ├── __init__.py
-│   ├── test_validation.py   ← Column and input validation tests
-│   ├── test_dates.py        ← Date parsing and historical label tests (TC2)
-│   ├── test_normalization.py ← Unit conversion tests (TC3)
-│   └── test_scenarios.py    ← TC1, TC2, TC3, TC4 integration tests
+│   ├── test_auth.py                  # User authentication & role verification tests
+│   ├── test_datasets_integration.py  # 3-dataset schema & loader integration tests
+│   ├── test_dates.py                 # Date parsing & historical age computation tests
+│   ├── test_normalization.py         # Unit conversion & parameter guardrail tests
+│   ├── test_scenarios.py             # Hackathon test cases TC1–TC4 integration tests
+│   └── test_validation.py            # Column schema & input sanitation tests
 │
 └── outputs/
-    └── reports.db           ← Auto-created SQLite database
+    └── reports.db                    # SQLite database (auto-created on first run)
 ```
 
 ---
 
-## ⚙️ How to Install Dependencies Locally
+## ⚡ Quick Start Guide
 
-Open a terminal in the project folder and run:
+### Option 1: Docker (Recommended)
 
+Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is running, then run:
+
+```bash
+docker compose up -d --build
+```
+
+The application will be live at: **`http://localhost:5000`**
+
+To view logs or stop the container:
+```bash
+docker compose logs -f
+docker compose down
+```
+
+---
+
+### Option 2: Local Python Environment
+
+1. **Clone the repository and enter the directory**:
+   ```bash
+   cd Water_Predict
+   ```
+
+2. **Create and activate a virtual environment**:
+   ```powershell
+   # Windows PowerShell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Launch the web application**:
+   ```bash
+   python app.py
+   ```
+
+5. **Open your browser**:
+   Navigate to **`http://localhost:5000`**
+
+---
+
+## 🔐 Demo Accounts & Credentials
+
+The application is pre-seeded with accounts for all 4 governance roles:
+
+| Role | Username | Password | Default Dashboard |
+|---|---|---|---|
+| **Environmental Officer** | `officer` | `officer2026` | `/dashboard/officer` |
+| **Municipal Inspector** | `inspector` | `inspector2026` | `/dashboard/inspector` |
+| **Senior Hydrologist** | `hydrologist` | `hydro2026` | `/dashboard/hydrologist` |
+| **Public Citizen** | `citizen` | `citizen2026` | `/dashboard/citizen` |
+
+> 💡 **User Registration**: You can also create a new account directly from the login page by clicking **"Sign up"** and selecting your designated role.
+
+---
+
+## 🧪 Automated Testing
+
+The project includes an automated test suite covering authentication, multi-dataset loading, date utilities, unit conversion, and test scenarios.
+
+Run the test suite:
 ```powershell
-pip install -r requirements.txt
+python -m pytest -v
+```
+
+### Test Suite Summary:
+```
+============================= test session starts =============================
+tests/test_auth.py .........                                             [ 10%]
+tests/test_datasets_integration.py ....                                  [ 14%]
+tests/test_dates.py ..................                                   [ 35%]
+tests/test_normalization.py ............                                 [ 48%]
+tests/test_scenarios.py ...................                              [ 70%]
+tests/test_validation.py ..........................                      [100%]
+============================= 88 passed in 2.62s ==============================
 ```
 
 ---
 
-## ▶️ How to Start the Application
+## 📋 Hackathon Scenarios Tested (TC1 – TC4)
 
-### Option A: Local Python Run
-
-```powershell
-python app.py
-```
-
-Then open your browser at: **http://localhost:5000**
-
----
-
-### Option B: Docker Run (Production Container)
-
-Make sure Docker Desktop is running, then execute:
-
-```powershell
-docker compose up --build
-```
-
-Or using standard Docker CLI:
-
-```powershell
-docker build -t ward-water-reporter .
-docker run -p 5000:5000 ward-water-reporter
-```
-
-Then open your browser at: **http://localhost:5000**
-
-> ⚠️ **You must place the CSV file first!**
-> Copy your file to: `data/tamil_nadu_groundwater_quality_cleaned.csv`
-> Then refresh the browser page.
+| Test Case | Scenario | Expected Behavior | Verification |
+|---|---|---|---|
+| **TC1** | Search with Ward specified | Shows water data with **Unverified Match** badge; never falsely claims piped tap connection. | Verified in `test_scenarios.py` |
+| **TC2** | Sample older than 365 days | Prominently labels sample as **Historical** with exact days elapsed. | Verified in `test_dates.py` |
+| **TC3** | Concentration unit mismatch | Normalizes `1 mg/L = 1000 µg/L` transparently; protects non-concentration units. | Verified in `test_normalization.py` |
+| **TC4** | Missing ward in dataset | Displays clear notice: *"No direct monitoring records found for this ward."* | Verified in `test_scenarios.py` |
 
 ---
 
-## 🧪 How to Run the Tests
+## 🛡️ Integrity, Transparency & Limitations
 
-```powershell
-pytest tests/ -v
-```
-
-Expected result: All tests pass ✅ (the tests that use the real CSV are separate
-and require the file to be present).
-
----
-
-## 📂 How the Data Is Loaded
-
-1. `src/data_loader.py` reads the CSV from `data/`.
-2. It strips whitespace from all string columns.
-3. It inspects every column to find district, station, and date columns by name.
-4. It identifies which columns have at least one numeric value (these become parameters).
-5. It never invents rows — if the file is missing, an error is shown.
+| Limitation | Technical Reason | Public Safeguard |
+|---|---|---|
+| **Groundwater Only** | CGWB samples monitoring wells, not municipal distribution pipes. | Clearly labeled as *Groundwater Telemetry*; cannot certify tap drinking water. |
+| **Historical Data** | Official state lab tests are periodic rather than continuous real-time feeds. | Exact collection year/date is displayed with sample age warnings. |
+| **No Auto-Publishing** | Automated pipelines could publish false alarms without review. | Human approval required from an Environmental Officer before report release. |
 
 ---
 
-## 🔄 How Unit Conversion Works
+## 📄 License & Attribution
 
-- **1 mg/L = 1,000 µg/L** (milligrams per litre to micrograms per litre)
-- **1 µg/L = 0.001 mg/L**
-- pH and other non-concentration units are blocked from conversion.
-- Unknown units are flagged: "Unit unknown — comparison unavailable."
-- Both the original value+unit and the converted value+unit are always shown.
-- Test fixtures are clearly marked `is_synthetic=True` and never shown as real data.
-
----
-
-## 📅 How Historical Records Are Handled
-
-- Sample age is calculated from the real system date (not hardcoded).
-- Any sample older than **365 days** is labelled **"Historical"**.
-- The exact collection date is always shown.
-- If you search "Last 30 days" but only older records exist, you see:
-  *"No samples were found within the selected period. Older records may be available."*
-
----
-
-## 🔗 How Sources Are Verified
-
-Every displayed result shows:
-- **Dataset name**: Tamil Nadu Groundwater Quality (Cleaned CSV)
-- **Official source**: Central Ground Water Board (CGWB) — India
-- **Data type**: Groundwater chemistry from monitoring wells (NOT tap water)
-- **Ward mapping**: No verified ward-to-station mapping exists in this dataset.
-- If a URL or station ID exists in the CSV, it is shown. If not, that is stated clearly.
-
----
-
-## ✅ How Human Approval Works
-
-1. User runs a search.
-2. Application finds real records and builds a **DRAFT** report.
-3. Draft shows all warnings, source references, and limitations.
-4. **A human must review and click Approve or Reject.**
-5. Only after approval is the report marked "Approved for publication."
-6. Approval is stored in SQLite with the reviewer's name and timestamp.
-7. Reports are **never auto-published**.
-
----
-
-## ⚠️ Dataset Limitations
-
-| Limitation | Impact |
-|------------|--------|
-| Groundwater monitoring wells, not tap water | Results cannot certify drinking-water safety |
-| No verified ward-to-station mapping | Ward matches are always "Unverified" |
-| Year-level dates only (if no full date) | Cannot confirm samples are from a specific month |
-| No individual lab report URLs | Cannot link to original lab PDF |
-| Historical records only (older than 1 year) | "Last 30 days" will show no results |
-
----
-
-## 🚀 What Would Be Needed for True Ward-Level Coverage
-
-1. An official, regularly updated ward-to-monitoring-station mapping table.
-2. Verified tap-water test results from municipal laboratories.
-3. Full date-time stamps on each sample.
-4. Individual lab report document links per sample.
-5. Automated daily data ingestion pipeline.
-6. State-level API integration with Tamil Nadu Water Supply & Drainage Board (TWAD).
-
----
-
-## 🏆 Hackathon Presentation Outline
-
-### 1. Problem Statement
-People lack transparent access to water-quality data for their specific ward.
-Official data exists but is not easily searchable or verifiable.
-
-### 2. Proposed Solution
-A local web app that honestly surfaces available groundwater records with full
-source transparency, historical labelling, ward-match verification status, and
-mandatory human approval before any report is published.
-
-### 3. User Workflow
-Search district → select station → enter ward (optional) → choose date period
-→ choose parameters → get results → view source evidence → generate draft report
-→ reviewer approves → download CSV.
-
-### 4. System Architecture
-CSV → Pandas → DatasetProfile → Search Pipeline → Flask Application & Responsive UI → SQLite Approval DB
-
-### 5. Dataset and Limitations
-CGWB Tamil Nadu groundwater chemistry dataset. No ward mapping. Groundwater only.
-Not certified drinking-water results.
-
-### 6. Four Test Cases
-- **TC1**: Ward selected → Unverified match shown, never claimed as verified.
-- **TC2**: Old sample → Labelled "Historical (collected N days ago)".
-- **TC3**: 1 mg/L = 1000 µg/L after normalization (synthetic fixture).
-- **TC4**: Missing ward → "No data found for this ward in the available dataset."
-
-### 7. Safeguards
-- Ward match always "Unverified" without official mapping.
-- Human must approve before publication.
-- No auto-publication.
-- No invented measurements.
-- Synthetic test fixtures never shown as real data.
-
-### 8. Future Improvements
-- Tamil Nadu TWAD API integration for live tap-water data.
-- Verified ward-station mapping database.
-- SMS/email alerts for new sample results.
-- Multi-language support (Tamil).
-- Mobile-responsive design improvements.
-
----
-
-*Built with honesty and transparency for the public good. 💧*
-#   W a t e r _ P r e d i c t  
- #   W a t e r _ P r e d i c t  
- 
+- **Data Attribution**: Central Ground Water Board (CGWB), Department of Water Resources, Ministry of Jal Shakti, Government of India.
+- **License**: Released under the **MIT License**.
+- Built with transparent science for public health and water accountability. 💧

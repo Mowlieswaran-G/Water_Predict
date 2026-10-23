@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261022_3" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20261023_1" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>" />
   <script>
     function setTheme(mode) {
@@ -48,7 +48,7 @@
 </head>
 <body>
 
-{% set is_login_page = (request.endpoint == 'login' or not current_user) %}
+{% set is_login_page = (request.endpoint == 'login') %}
 
 <!-- ══════════════════════════════════════════════════════
      SIDEBAR (Rendered ONLY when logged in)
@@ -296,7 +296,7 @@
 
   <!-- Flash messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
+    {% if messages and not is_login_page %}
       <div class="flash-zone">
         {% for cat, msg in messages %}
           <div class="flash flash-{{ cat }}">

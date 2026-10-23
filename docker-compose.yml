@@ -14,3 +14,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./outputs:/app/outputs
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./src:/app/src
+      - ./app.py:/app/app.py

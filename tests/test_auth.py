@@ -84,15 +84,15 @@ class TestAuthentication:
         user = auth.get_user(uname)
         assert user["role"] == "Municipal Quality Inspector"
 
-    def test_login_page_renders_segmented_options_and_no_dummy_user_in_login(self):
+    def test_login_page_renders_signup_option_and_no_dummy_user_in_login(self):
         from app import app
         client = app.test_client()
         resp = client.get("/login")
         assert resp.status_code == 200
         html = resp.data.decode("utf-8")
-        assert "tabBtnLogin" in html
-        assert "tabBtnRegister" in html
-        assert "Create User" in html
+        assert "Sign up" in html
+        assert "loginFormSection" in html
+        assert "registerFormSection" in html
         assert "roleCardOfficer" in html
         assert "roleCardInspector" in html
         assert "roleCardHydrologist" in html
