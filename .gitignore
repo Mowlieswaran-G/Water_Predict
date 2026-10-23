@@ -15,8 +15,6 @@ outputs/*.db
 outputs/*.csv
 outputs/*.pdf
 
-# Data files (large)
-data/*.csv
 
 # Streamlit cache
 .streamlit/

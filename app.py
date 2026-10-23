@@ -743,6 +743,12 @@ def api_dataset_info():
     })
 
 
+@app.route("/healthz")
+def healthz():
+    """Lightweight cloud healthcheck endpoint."""
+    return jsonify({"status": "healthy", "service": "ward-water-quality-reporter"}), 200
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -26,11 +26,11 @@ COPY . .
 RUN mkdir -p /app/outputs /app/data
 
 # Expose application port
-EXPOSE 5000
+EXPOSE 5000 10000
 
 # Healthcheck to verify the web service is responding
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/api/dataset-info || exit 1
+HEALTHCHECK --interval=20s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-5000}/healthz || exit 1
 
 # Run with Gunicorn WSGI server for production (supports dynamic cloud PORT or 5000)
 CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 app:app"]

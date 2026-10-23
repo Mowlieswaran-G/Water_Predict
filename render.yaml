@@ -4,7 +4,7 @@ services:
     runtime: docker
     plan: free
     region: singapore
-    healthCheckPath: /api/dataset-info
+    healthCheckPath: /healthz
     envVars:
       - key: PORT
         value: "10000"
