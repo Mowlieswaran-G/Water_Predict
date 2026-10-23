@@ -32,5 +32,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/api/dataset-info || exit 1
 
-# Run with Gunicorn WSGI server for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]
+# Run with Gunicorn WSGI server for production (supports dynamic cloud PORT or 5000)
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 app:app"]

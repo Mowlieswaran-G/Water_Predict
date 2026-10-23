@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ward-water-quality-reporter
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /api/dataset-info
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "false"
